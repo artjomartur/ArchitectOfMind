@@ -14,6 +14,21 @@ public class MobileControlsManager : MonoBehaviour
     private GameObject canvasInstance;
     private VirtualJoystick activeJoystick;
 
+    // UI Elements references
+    private GameObject joystickBG;
+    private GameObject actionButtonsGroup;
+    private Text moduleTitleText;
+    private Text statsText;
+    private Text modeToggleText;
+
+    private string[] moduleNames = new string[] {
+        "ACHTSAMES WACHSEN\nSamen durch tägliche Dankbarkeit pflegen.",
+        "INNERER DIALOG\nPositive innere Stimmen stärken.",
+        "RESSOURCEN-PFAD\nSoziale Kontakte und Hobbys reaktivieren.",
+        "STRESS-ABLENKUNG\nFokus auf Aufbau, Trigger ignorieren.",
+        "GEMEINSAMES HEILEN\nGegenseitige Unterstützung im Koop-Modus."
+    };
+
     void Start()
     {
         fpc = FindAnyObjectByType<FirstPersonController>();
@@ -25,11 +40,23 @@ public class MobileControlsManager : MonoBehaviour
 
     void Update()
     {
+        if (MindfulnessGameManager.Instance == null) return;
+
+        // Slide look input handler
         UpdateLookInput();
+
+        // Update UI states based on active navigation mode
+        UpdateUIVisibility();
+
+        // Update stats and texts dynamically
+        UpdateUIData();
     }
 
     private void UpdateLookInput()
     {
+        // Only allow touch-dragging camera looking when free walk mode is active
+        if (MindfulnessGameManager.Instance.isSlideNavigationActive) return;
+
         if (Touchscreen.current != null && fpc != null)
         {
             foreach (var touch in Touchscreen.current.touches)
@@ -48,6 +75,65 @@ public class MobileControlsManager : MonoBehaviour
         }
     }
 
+    private void UpdateUIVisibility()
+    {
+        bool slideActive = MindfulnessGameManager.Instance.isSlideNavigationActive;
+
+        // Hide Joystick and Action Buttons in slide mode, show in Walk mode
+        if (joystickBG != null) joystickBG.SetActive(!slideActive);
+        if (actionButtonsGroup != null) actionButtonsGroup.SetActive(!slideActive);
+    }
+
+    private void UpdateUIData()
+    {
+        var mgm = MindfulnessGameManager.Instance;
+        if (mgm == null) return;
+
+        // Update Title text
+        if (moduleTitleText != null)
+        {
+            moduleTitleText.text = moduleNames[mgm.currentModuleIndex];
+        }
+
+        // Update Mode Toggle button text
+        if (modeToggleText != null)
+        {
+            modeToggleText.text = mgm.isSlideNavigationActive ? "FREIER MODUS" : "DIASHOW MODUS";
+        }
+
+        // Update Stats text
+        if (statsText != null)
+        {
+            switch (mgm.currentModuleIndex)
+            {
+                case 0: // Wachsen
+                    statsText.text = $"Dankbarkeits-Zähler: {mgm.gratitudeCount} / {mgm.maxGratitude}\n" +
+                                     $"Wachstum: {Mathf.RoundToInt(mgm.plantGrowth * 100f)}%\n\n" +
+                                     "Tippe das Beet an, um zu gießen!";
+                    break;
+                case 1: // Dialog
+                    float percentage = Mathf.RoundToInt((mgm.thoughtBalance + 1f) * 50f);
+                    statsText.text = $"Gedanken-Wippe: {percentage}% Positiv\n\n" +
+                                     "Tippe positive Gedanken (Grün) an!\n" +
+                                     "Tippe negative Gedanken (Rot) an, um sie zu filtern!";
+                    break;
+                case 2: // Pfad
+                    statsText.text = $"Kristalle gesammelt: {mgm.crystalsCollected} / {mgm.totalCrystals}\n\n" +
+                                     "Tippe Memory-Kristalle zum Sammeln an!";
+                    break;
+                case 3: // Ablenkung
+                    statsText.text = $"Gepflanzte Bäume: {mgm.treesPlanted}\n" +
+                                     $"Schutzschild: {Mathf.RoundToInt(mgm.distractionSuccess * 100f)}%\n\n" +
+                                     "Tippe das Beet an, um Bäume wachsen zu lassen!";
+                    break;
+                case 4: // Heilen
+                    statsText.text = $"Heilungs-Fortschritt: {mgm.healingProgress}%\n\n" +
+                                     "Tippe eingestürzte Säulen an, um sie aufzubauen!";
+                    break;
+            }
+        }
+    }
+
     private void CreateMobileUI()
     {
         // 1. Create Canvas
@@ -59,27 +145,29 @@ public class MobileControlsManager : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
 
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (font == null) font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
         // 2. Create Left Joystick
         CreateJoystick(canvasInstance.transform);
 
-        // 3. Create Action Buttons
-        CreateActionButtons(canvasInstance.transform);
+        // 3. Create Action Buttons Group
+        CreateActionButtons(canvasInstance.transform, font);
 
-        // 4. Create Color Palette
-        CreateColorPalette(canvasInstance.transform);
+        // 4. Create Slide Navigation Header
+        CreateSlideHeader(canvasInstance.transform, font);
+
+        // 5. Create Stats Overlay Panel
+        CreateStatsOverlay(canvasInstance.transform, font);
     }
 
     private void CreateJoystick(Transform parent)
     {
-        // Background Circle
-        GameObject bgGO = CreateImage(parent, "JoystickBG", new Vector2(250, 250), new Vector2(200, 200), new Vector2(0, 0), new Vector2(0, 0), new Color(0, 0, 0, 0.3f));
-        
-        // Handle Circle
-        GameObject handleGO = CreateImage(bgGO.transform, "JoystickHandle", new Vector2(100, 100), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(1, 1, 1, 0.6f));
+        joystickBG = CreateImage(parent, "JoystickBG", new Vector2(250, 250), new Vector2(200, 200), new Vector2(0, 0), new Vector2(0, 0), new Color(0, 0, 0, 0.3f));
+        GameObject handleGO = CreateImage(joystickBG.transform, "JoystickHandle", new Vector2(100, 100), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(1, 1, 1, 0.6f));
 
-        // Add Virtual Joystick script
-        activeJoystick = bgGO.AddComponent<VirtualJoystick>();
-        activeJoystick.background = bgGO.GetComponent<RectTransform>();
+        activeJoystick = joystickBG.AddComponent<VirtualJoystick>();
+        activeJoystick.background = joystickBG.GetComponent<RectTransform>();
         activeJoystick.handle = handleGO.GetComponent<RectTransform>();
         activeJoystick.onJoystickMoved = (moveInput) =>
         {
@@ -87,13 +175,18 @@ public class MobileControlsManager : MonoBehaviour
         };
     }
 
-    private void CreateActionButtons(Transform parent)
+    private void CreateActionButtons(Transform parent, Font font)
     {
-        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        if (font == null) font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        actionButtonsGroup = new GameObject("ActionButtonsGroup", typeof(RectTransform));
+        actionButtonsGroup.transform.SetParent(parent, false);
+        RectTransform rt = actionButtonsGroup.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(1f, 0f);
+        rt.anchorMax = new Vector2(1f, 0f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(500, 500);
 
         // --- JUMP BUTTON ---
-        GameObject jumpButton = CreateButton(parent, "JumpButton", new Vector2(140, 140), new Vector2(-150, 220), new Vector2(1, 0), new Vector2(1, 0), new Color(0.2f, 0.2f, 0.2f, 0.6f));
+        GameObject jumpButton = CreateButton(actionButtonsGroup.transform, "JumpButton", new Vector2(140, 140), new Vector2(-150, 220), new Vector2(1, 0), new Vector2(1, 0), new Color(0.2f, 0.2f, 0.2f, 0.6f));
         CreateText(jumpButton.transform, "JUMP", font, 24, Color.white);
         jumpButton.GetComponent<Button>().onClick.AddListener(() =>
         {
@@ -101,7 +194,7 @@ public class MobileControlsManager : MonoBehaviour
         });
 
         // --- BUILD / SPAWN BUTTON ---
-        GameObject buildButton = CreateButton(parent, "BuildButton", new Vector2(140, 140), new Vector2(-320, 220), new Vector2(1, 0), new Vector2(1, 0), new Color(0.1f, 0.7f, 0.1f, 0.6f));
+        GameObject buildButton = CreateButton(actionButtonsGroup.transform, "BuildButton", new Vector2(140, 140), new Vector2(-320, 220), new Vector2(1, 0), new Vector2(1, 0), new Color(0.1f, 0.7f, 0.1f, 0.6f));
         CreateText(buildButton.transform, "BUILD", font, 24, Color.white);
         buildButton.GetComponent<Button>().onClick.AddListener(() =>
         {
@@ -109,7 +202,7 @@ public class MobileControlsManager : MonoBehaviour
         });
 
         // --- DELETE / DESTROY BUTTON ---
-        GameObject destroyButton = CreateButton(parent, "DestroyButton", new Vector2(140, 140), new Vector2(-150, 390), new Vector2(1, 0), new Vector2(1, 0), new Color(0.7f, 0.1f, 0.1f, 0.6f));
+        GameObject destroyButton = CreateButton(actionButtonsGroup.transform, "DestroyButton", new Vector2(140, 140), new Vector2(-150, 390), new Vector2(1, 0), new Vector2(1, 0), new Color(0.7f, 0.1f, 0.1f, 0.6f));
         CreateText(destroyButton.transform, "DEL", font, 24, Color.white);
         destroyButton.GetComponent<Button>().onClick.AddListener(() =>
         {
@@ -117,10 +210,9 @@ public class MobileControlsManager : MonoBehaviour
         });
 
         // --- GRAB / MIND HOLD BUTTON ---
-        GameObject grabButton = CreateButton(parent, "GrabButton", new Vector2(140, 140), new Vector2(-320, 390), new Vector2(1, 0), new Vector2(1, 0), new Color(0.1f, 0.5f, 0.8f, 0.6f));
+        GameObject grabButton = CreateButton(actionButtonsGroup.transform, "GrabButton", new Vector2(140, 140), new Vector2(-320, 390), new Vector2(1, 0), new Vector2(1, 0), new Color(0.1f, 0.5f, 0.8f, 0.6f));
         CreateText(grabButton.transform, "MIND\nHOLD", font, 20, Color.white);
         
-        // Use HoldButton script for E-like press-and-hold behavior
         HoldButton hold = grabButton.AddComponent<HoldButton>();
         hold.onStateChanged = (isHolding) =>
         {
@@ -128,37 +220,72 @@ public class MobileControlsManager : MonoBehaviour
         };
     }
 
-    private void CreateColorPalette(Transform parent)
+    private void CreateSlideHeader(Transform parent, Font font)
     {
-        if (mindArchitect == null) return;
+        // 1. Navigation Panel (Top Bar background)
+        GameObject headerPanel = CreateImage(parent, "HeaderPanel", new Vector2(1800, 150), new Vector2(0, -100), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Color(0, 0, 0, 0.4f));
 
-        Color[] colors = mindArchitect.GetBuildColors();
-        float buttonSize = 80f;
-        float spacing = 20f;
-        float totalWidth = (buttonSize * colors.Length) + (spacing * (colors.Length - 1));
-        float startX = -totalWidth / 2f + buttonSize / 2f;
-
-        // Container panel for palette
-        GameObject paletteContainer = new GameObject("ColorPalette", typeof(RectTransform));
-        paletteContainer.transform.SetParent(parent, false);
-        RectTransform rectTrans = paletteContainer.GetComponent<RectTransform>();
-        rectTrans.anchorMin = new Vector2(0.5f, 0f);
-        rectTrans.anchorMax = new Vector2(0.5f, 0f);
-        rectTrans.anchoredPosition = new Vector2(0f, 80f);
-        rectTrans.sizeDelta = new Vector2(totalWidth, buttonSize);
-
-        for (int i = 0; i < colors.Length; i++)
+        // 2. Left Arrow Button
+        GameObject leftArrow = CreateButton(headerPanel.transform, "LeftArrow", new Vector2(100, 100), new Vector2(80, 0), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Color(0.3f, 0.3f, 0.3f, 0.8f));
+        CreateText(leftArrow.transform, "<", font, 36, Color.white);
+        leftArrow.GetComponent<Button>().onClick.AddListener(() =>
         {
-            int index = i;
-            GameObject colorBtn = CreateButton(paletteContainer.transform, $"Color_{i}", new Vector2(buttonSize, buttonSize), new Vector2(startX + i * (buttonSize + spacing), 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), colors[i]);
-            
-            // Highlight/Border handling or simple click action
-            colorBtn.GetComponent<Button>().onClick.AddListener(() =>
+            if (MindfulnessGameManager.Instance != null) MindfulnessGameManager.Instance.PrevModule();
+        });
+
+        // 3. Right Arrow Button
+        GameObject rightArrow = CreateButton(headerPanel.transform, "RightArrow", new Vector2(100, 100), new Vector2(-80, 0), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Color(0.3f, 0.3f, 0.3f, 0.8f));
+        CreateText(rightArrow.transform, ">", font, 36, Color.white);
+        rightArrow.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            if (MindfulnessGameManager.Instance != null) MindfulnessGameManager.Instance.NextModule();
+        });
+
+        // 4. Module Title Text
+        GameObject titleGO = new GameObject("ModuleTitleText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        titleGO.transform.SetParent(headerPanel.transform, false);
+        RectTransform rt = titleGO.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.2f, 0f);
+        rt.anchorMax = new Vector2(0.8f, 1f);
+        rt.sizeDelta = Vector2.zero;
+
+        moduleTitleText = titleGO.GetComponent<Text>();
+        moduleTitleText.text = moduleNames[0];
+        moduleTitleText.font = font;
+        moduleTitleText.fontSize = 28;
+        moduleTitleText.alignment = TextAnchor.MiddleCenter;
+        moduleTitleText.color = Color.yellow;
+
+        // 5. Mode Toggle Button
+        GameObject toggleBtn = CreateButton(headerPanel.transform, "ModeToggleButton", new Vector2(250, 100), new Vector2(-220, 0), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Color(0.1f, 0.5f, 0.6f, 0.8f));
+        modeToggleText = CreateText(toggleBtn.transform, "FREIER MODUS", font, 20, Color.white).GetComponent<Text>();
+        toggleBtn.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            if (MindfulnessGameManager.Instance != null)
             {
-                mindArchitect.SetColorIndex(index);
-                Debug.Log($"Mobile color select: {index}");
-            });
-        }
+                bool active = MindfulnessGameManager.Instance.isSlideNavigationActive;
+                MindfulnessGameManager.Instance.SetSlideNavigation(!active);
+            }
+        });
+    }
+
+    private void CreateStatsOverlay(Transform parent, Font font)
+    {
+        GameObject statsPanel = CreateImage(parent, "StatsPanel", new Vector2(400, 350), new Vector2(250, -400), new Vector2(0f, 1f), new Vector2(0f, 1f), new Color(0, 0, 0, 0.5f));
+        
+        GameObject statsGO = new GameObject("StatsText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        statsGO.transform.SetParent(statsPanel.transform, false);
+        RectTransform rt = statsGO.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = new Vector2(20, 20);
+        rt.offsetMax = new Vector2(-20, -20);
+
+        statsText = statsGO.GetComponent<Text>();
+        statsText.font = font;
+        statsText.fontSize = 22;
+        statsText.alignment = TextAnchor.UpperLeft;
+        statsText.color = Color.white;
     }
 
     // --- HELPER CREATION METHODS ---
@@ -227,14 +354,12 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             float width = background.sizeDelta.x;
             float height = background.sizeDelta.y;
 
-            // Map local position to a range between -1 and 1
             pos.x = (pos.x / width) * 2f;
             pos.y = (pos.y / height) * 2f;
 
             inputVector = new Vector2(pos.x, pos.y);
             inputVector = (inputVector.magnitude > 1.0f) ? inputVector.normalized : inputVector;
 
-            // Update handle UI position
             handle.anchoredPosition = new Vector2(inputVector.x * (width / 3f), inputVector.y * (height / 3f));
             
             onJoystickMoved?.Invoke(inputVector);
