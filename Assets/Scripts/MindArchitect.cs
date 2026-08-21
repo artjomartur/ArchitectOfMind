@@ -166,7 +166,7 @@ public class MindArchitect : MonoBehaviour
                 // Hold object in front of camera
                 Vector3 targetPos = playerCamera.transform.position + playerCamera.transform.forward * currentGrabDistance;
                 Vector3 direction = targetPos - grabbedRigidbody.position;
-                grabbedRigidbody.velocity = direction * grabSpeed;
+                grabbedRigidbody.linearVelocity = direction * grabSpeed;
                 
                 // Keep rotation still or slightly damped
                 grabbedRigidbody.angularVelocity = Vector3.zero;

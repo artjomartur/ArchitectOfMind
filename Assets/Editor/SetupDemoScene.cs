@@ -118,7 +118,7 @@ public class SetupDemoScene : EditorWindow
 
         if (!found)
         {
-            tagsProp.insertArrayElementAtIndex(tagsProp.arraySize);
+            tagsProp.InsertArrayElementAtIndex(tagsProp.arraySize);
             tagsProp.GetArrayElementAtIndex(tagsProp.arraySize - 1).stringValue = tag;
             tagManager.ApplyModifiedProperties();
             Debug.Log($"Registered tag: '{tag}'");
@@ -135,7 +135,7 @@ public class SetupDemoScene : EditorWindow
         if (oldPlayer != null) Undo.DestroyObjectImmediate(oldPlayer);
 
         // Delete any leftover cameras tag-wise if they are not in Player
-        Camera[] cameras = GameObject.FindObjectsOfType<Camera>();
+        Camera[] cameras = Object.FindObjectsByType<Camera>();
         foreach (var cam in cameras)
         {
             if (cam.transform.parent == null || !cam.transform.parent.name.Contains("Player"))
@@ -152,7 +152,7 @@ public class SetupDemoScene : EditorWindow
         }
 
         // Fallback for name-based lookup
-        GameObject[] allObjects = GameObject.FindObjectsOfType<GameObject>();
+        GameObject[] allObjects = Object.FindObjectsByType<GameObject>();
         foreach (var obj in allObjects)
         {
             if (obj != null && obj.name.StartsWith("Interactive Block"))
