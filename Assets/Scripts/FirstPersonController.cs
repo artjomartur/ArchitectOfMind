@@ -21,14 +21,21 @@ public class FirstPersonController : MonoBehaviour
     private float rotationX = 0f;
     private bool isGrounded;
 
+    // Mobile Input States
+    private Vector2 mobileMoveInput = Vector2.zero;
+    private Vector2 mobileLookInput = Vector2.zero;
+    private bool mobileJumpPressed = false;
+
     void Start()
     {
         characterController = GetComponent<CharacterController>();
         playerCamera = GetComponentInChildren<Camera>();
         
-        // Lock cursor to the game window
+        // Hide and lock cursor ONLY if not on mobile/touch screen devices
+#if !UNITY_ANDROID && !UNITY_IOS
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+#endif
     }
 
     void Update()
@@ -41,10 +48,19 @@ public class FirstPersonController : MonoBehaviour
         }
 
         // --- LOOK ---
+        Vector2 lookInput = Vector2.zero;
         if (Mouse.current != null)
         {
-            Vector2 lookInput = Mouse.current.delta.ReadValue() * mouseSensitivity;
-            
+            lookInput += Mouse.current.delta.ReadValue() * mouseSensitivity;
+        }
+        
+        // Add mobile look (swipe delta)
+        lookInput += mobileLookInput;
+        // Consume mobile look delta
+        mobileLookInput = Vector2.zero;
+
+        if (lookInput.sqrMagnitude > 0.0001f)
+        {
             // Horizontal rotation (yaw)
             transform.Rotate(Vector3.up * lookInput.x);
 
@@ -58,14 +74,17 @@ public class FirstPersonController : MonoBehaviour
         }
 
         // --- MOVE ---
-        Vector2 moveInput = Vector2.zero;
+        Vector2 keyboardMoveInput = Vector2.zero;
         if (Keyboard.current != null)
         {
-            if (Keyboard.current.wKey.isPressed) moveInput.y += 1f;
-            if (Keyboard.current.sKey.isPressed) moveInput.y -= 1f;
-            if (Keyboard.current.aKey.isPressed) moveInput.x -= 1f;
-            if (Keyboard.current.dKey.isPressed) moveInput.x += 1f;
+            if (Keyboard.current.wKey.isPressed) keyboardMoveInput.y += 1f;
+            if (Keyboard.current.sKey.isPressed) keyboardMoveInput.y -= 1f;
+            if (Keyboard.current.aKey.isPressed) keyboardMoveInput.x -= 1f;
+            if (Keyboard.current.dKey.isPressed) keyboardMoveInput.x += 1f;
         }
+
+        // Combine inputs
+        Vector2 moveInput = keyboardMoveInput + mobileMoveInput;
 
         // Normalise move input to prevent fast diagonal movement
         if (moveInput.magnitude > 1f)
@@ -73,17 +92,37 @@ public class FirstPersonController : MonoBehaviour
             moveInput.Normalize();
         }
 
-        float speed = (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed) ? runSpeed : walkSpeed;
+        bool isSprinting = (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed);
+        float speed = isSprinting ? runSpeed : walkSpeed;
         Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
         characterController.Move(move * speed * Time.deltaTime);
 
         // --- JUMP & GRAVITY ---
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded)
+        bool jumpTriggered = (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame) || mobileJumpPressed;
+        if (jumpTriggered && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2.0f * gravity);
         }
+        // Consume jump input
+        mobileJumpPressed = false;
 
         velocity.y += gravity * Time.deltaTime;
         characterController.Move(velocity * Time.deltaTime);
+    }
+
+    // --- MOBILE API HOOKS ---
+    public void SetMobileMove(Vector2 move)
+    {
+        mobileMoveInput = move;
+    }
+
+    public void SetMobileLook(Vector2 lookDelta)
+    {
+        mobileLookInput = lookDelta;
+    }
+
+    public void TriggerJump()
+    {
+        mobileJumpPressed = true;
     }
 }

@@ -24,7 +24,6 @@ public class SetupDemoScene : EditorWindow
         {
             Material groundMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             groundMat.color = new Color(0.2f, 0.2f, 0.2f); // Dark grey ground
-            // Make it look slightly metallic/rough
             groundMat.SetFloat("_Metallic", 0.1f);
             groundMat.SetFloat("_Smoothness", 0.2f);
             groundRenderer.material = groundMat;
@@ -71,7 +70,6 @@ public class SetupDemoScene : EditorWindow
                 block.name = $"Interactive Block {count++}";
                 block.tag = "SpawnedBlock";
 
-                // Offset calculation to center the pyramid rows
                 float offset = (cols - 1) * 0.5f;
                 block.transform.position = towerBase + new Vector3(x - offset, y, 0f);
 
@@ -83,7 +81,6 @@ public class SetupDemoScene : EditorWindow
                 if (renderer != null)
                 {
                     Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                    // Make higher blocks redder, lower blocks yellower
                     mat.color = Color.Lerp(Color.yellow, Color.red, (float)y / rows);
                     renderer.material = mat;
                 }
@@ -92,10 +89,25 @@ public class SetupDemoScene : EditorWindow
             }
         }
 
+        // 6. Create EventSystem (required for UI interaction)
+        GameObject eventSystem = GameObject.Find("EventSystem");
+        if (eventSystem == null)
+        {
+            eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
+            // Add InputSystemUIInputModule for modern Input System UI interaction
+            eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            Undo.RegisterCreatedObjectUndo(eventSystem, "Create EventSystem");
+        }
+
+        // 7. Create Mobile Controls Manager (instantiates the Touch UI)
+        GameObject mobileControlsManager = new GameObject("MobileControlsManager");
+        mobileControlsManager.AddComponent<MobileControlsManager>();
+        Undo.RegisterCreatedObjectUndo(mobileControlsManager, "Create Mobile Controls Manager");
+
         // Mark the scene as modified so Unity asks to save
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         
-        Debug.Log("Architect of Mind: Demo Scene setup complete! Press Play in the editor to test.");
+        Debug.Log("Architect of Mind: Mobile Demo Scene setup complete! Press Play in the editor to test.");
     }
 
     private static void RegisterTag(string tag)
@@ -133,6 +145,12 @@ public class SetupDemoScene : EditorWindow
 
         GameObject oldPlayer = GameObject.Find("Player");
         if (oldPlayer != null) Undo.DestroyObjectImmediate(oldPlayer);
+
+        GameObject oldManager = GameObject.Find("MobileControlsManager");
+        if (oldManager != null) Undo.DestroyObjectImmediate(oldManager);
+
+        GameObject oldCanvas = GameObject.Find("MobileControlsCanvas");
+        if (oldCanvas != null) Undo.DestroyObjectImmediate(oldCanvas);
 
         // Delete any leftover cameras tag-wise if they are not in Player
         Camera[] cameras = Object.FindObjectsByType<Camera>();

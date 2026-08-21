@@ -22,6 +22,11 @@ public class MindArchitect : MonoBehaviour
     private Rigidbody grabbedRigidbody;
     private float currentGrabDistance;
 
+    // Mobile Input States
+    private bool mobileSpawnTriggered = false;
+    private bool mobileDestroyTriggered = false;
+    private bool mobileGrabActive = false;
+
     // A simple Reticle UI element
     private Texture2D reticleTexture;
 
@@ -45,7 +50,7 @@ public class MindArchitect : MonoBehaviour
     {
         if (playerCamera == null) return;
 
-        // Change color with mouse scroll or number keys 1-7
+        // Change color with mouse scroll or number keys 1-7 (Desktop fallback)
         HandleColorSelection();
 
         // Mind Spawning / Deleting Blocks
@@ -86,10 +91,11 @@ public class MindArchitect : MonoBehaviour
 
     void HandleBuilding()
     {
-        if (Mouse.current == null) return;
+        bool spawnTriggered = (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) || mobileSpawnTriggered;
+        mobileSpawnTriggered = false; // Consume trigger
 
-        // Click left button to spawn block
-        if (Mouse.current.leftButton.wasPressedThisFrame && grabbedRigidbody == null)
+        // Click to spawn block
+        if (spawnTriggered && grabbedRigidbody == null)
         {
             Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             if (Physics.Raycast(ray, out RaycastHit hit, maxReachDistance))
@@ -124,8 +130,11 @@ public class MindArchitect : MonoBehaviour
             }
         }
 
-        // Click right button to destroy spawned block
-        if (Mouse.current.rightButton.wasPressedThisFrame)
+        bool destroyTriggered = (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame) || mobileDestroyTriggered;
+        mobileDestroyTriggered = false; // Consume trigger
+
+        // Click to destroy spawned block
+        if (destroyTriggered)
         {
             Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             if (Physics.Raycast(ray, out RaycastHit hit, maxReachDistance))
@@ -140,9 +149,7 @@ public class MindArchitect : MonoBehaviour
 
     void HandleGrab()
     {
-        if (Keyboard.current == null) return;
-
-        bool grabKeyPressed = Keyboard.current.eKey.isPressed;
+        bool grabKeyPressed = (Keyboard.current != null && Keyboard.current.eKey.isPressed) || mobileGrabActive;
 
         if (grabKeyPressed)
         {
@@ -183,6 +190,40 @@ public class MindArchitect : MonoBehaviour
         }
     }
 
+    // --- MOBILE API HOOKS ---
+    public void TriggerMobileSpawn()
+    {
+        mobileSpawnTriggered = true;
+    }
+
+    public void TriggerMobileDestroy()
+    {
+        mobileDestroyTriggered = true;
+    }
+
+    public void SetMobileGrab(bool active)
+    {
+        mobileGrabActive = active;
+    }
+
+    public void SetColorIndex(int index)
+    {
+        if (index >= 0 && index < buildColors.Length)
+        {
+            currentColorIndex = index;
+        }
+    }
+
+    public int GetColorIndex()
+    {
+        return currentColorIndex;
+    }
+
+    public Color[] GetBuildColors()
+    {
+        return buildColors;
+    }
+
     void OnGUI()
     {
         // Draw crosshair at the center of screen
@@ -193,7 +234,8 @@ public class MindArchitect : MonoBehaviour
             GUI.color = buildColors[currentColorIndex];
             GUI.DrawTexture(new Rect(xMin, yMin, 6, 6), reticleTexture);
             
-            // Draw controls helper text
+#if !UNITY_ANDROID && !UNITY_IOS
+            // Draw desktop controls helper text when in editor or standalone desktop builds
             GUI.color = Color.white;
             GUI.Box(new Rect(10, 10, 320, 100), "Mind Architect Controls:\n" +
                 "- WASD: Walk (Shift to Run)\n" +
@@ -202,6 +244,7 @@ public class MindArchitect : MonoBehaviour
                 "- Right Click: Destroy Spawned Block\n" +
                 "- Hold E: Grab and Move Block with your Mind!\n" +
                 $"- Scroll / Keys 1-7: Change Block Color (Current: {buildColors[currentColorIndex]})");
+#endif
         }
     }
 }
