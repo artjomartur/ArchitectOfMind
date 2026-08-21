@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
 
 public class MindfulnessGameManager : MonoBehaviour
 {
@@ -83,14 +84,27 @@ public class MindfulnessGameManager : MonoBehaviour
 
     void Update()
     {
-        // Toggle navigation modes in editor for easy debugging (Key: N)
-        if (Input.GetKeyDown(KeyCode.N))
+        // Toggle navigation modes on Windows (Key: Escape)
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             SetSlideNavigation(!isSlideNavigationActive);
         }
 
         if (isSlideNavigationActive)
         {
+            // Keyboard controls for slide transition on Windows (Left/Right arrows or A/D keys)
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.leftArrowKey.wasPressedThisFrame || Keyboard.current.aKey.wasPressedThisFrame)
+                {
+                    PrevModule();
+                }
+                else if (Keyboard.current.rightArrowKey.wasPressedThisFrame || Keyboard.current.dKey.wasPressedThisFrame)
+                {
+                    NextModule();
+                }
+            }
+
             // Smoothly move and rotate camera to the target module's view
             if (mainCamera != null)
             {

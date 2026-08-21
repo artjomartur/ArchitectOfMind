@@ -36,6 +36,14 @@ public class MobileControlsManager : MonoBehaviour
 
         // Programmatically construct the Mobile UI Canvas
         CreateMobileUI();
+
+        // Hide Mobile UI Canvas when running as a Standalone build on desktop (Windows, Mac, Linux)
+#if (UNITY_STANDALONE || UNITY_WEBGL) && !UNITY_EDITOR
+        if (canvasInstance != null)
+        {
+            canvasInstance.SetActive(false);
+        }
+#endif
     }
 
     void Update()
