@@ -174,6 +174,8 @@ public class MindfulnessGameManager : MonoBehaviour
 
     private void HandleDialogueBubbles()
     {
+        if (PlayerPrefs.GetInt("OnboardingCompleted", 0) == 0) return;
+
         // Only spawn bubbles when player is viewing the dialogue module (index 1) or in 3D mode
         if (currentModuleIndex != 1 && isSlideNavigationActive) return;
 

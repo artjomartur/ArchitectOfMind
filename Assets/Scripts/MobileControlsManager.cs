@@ -85,6 +85,23 @@ public class MobileControlsManager : MonoBehaviour
 
     private void UpdateUIVisibility()
     {
+        bool onboardingActive = PlayerPrefs.GetInt("OnboardingCompleted", 0) == 0;
+        
+        if (onboardingActive)
+        {
+            if (canvasInstance != null && canvasInstance.activeSelf) canvasInstance.SetActive(false);
+            return;
+        }
+        else
+        {
+            if (canvasInstance != null && !canvasInstance.activeSelf)
+            {
+#if UNITY_EDITOR || UNITY_ANDROID || UNITY_IOS
+                canvasInstance.SetActive(true);
+#endif
+            }
+        }
+
         bool slideActive = MindfulnessGameManager.Instance.isSlideNavigationActive;
 
         // Hide Joystick and Action Buttons in slide mode, show in Walk mode
@@ -167,6 +184,19 @@ public class MobileControlsManager : MonoBehaviour
 
         // 5. Create Stats Overlay Panel
         CreateStatsOverlay(canvasInstance.transform, font);
+
+        // 6. Reset Onboarding button (Visible in Editor/Standalone for testing)
+#if UNITY_EDITOR || UNITY_STANDALONE
+        GameObject resetBtn = CreateButton(canvasInstance.transform, "ResetOnboardingButton", new Vector2(240, 50), new Vector2(150, 50), new Vector2(0f, 0f), new Vector2(0f, 0f), new Color(0.6f, 0.2f, 0.2f, 0.8f));
+        CreateText(resetBtn.transform, "Reset Onboarding", font, 18, Color.white);
+        resetBtn.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            PlayerPrefs.SetInt("OnboardingCompleted", 0);
+            PlayerPrefs.Save();
+            Debug.Log("Onboarding Reset!");
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+        });
+#endif
     }
 
     private void CreateJoystick(Transform parent)
@@ -335,6 +365,7 @@ public class MobileControlsManager : MonoBehaviour
         text.fontSize = fontSize;
         text.alignment = TextAnchor.MiddleCenter;
         text.color = color;
+        text.raycastTarget = false;
 
         return go;
     }

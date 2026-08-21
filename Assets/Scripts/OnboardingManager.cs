@@ -255,6 +255,7 @@ public class OnboardingManager : MonoBehaviour
         text.fontSize = fontSize;
         text.alignment = TextAnchor.MiddleCenter;
         text.color = color;
+        text.raycastTarget = false;
 
         return go;
     }
