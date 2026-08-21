@@ -249,8 +249,10 @@ public class SetupDemoScene : EditorWindow
         mobileControlsManager.AddComponent<MobileControlsManager>();
         Undo.RegisterCreatedObjectUndo(mobileControlsManager, "Create Mobile Controls Manager");
 
-        // Force call Start to setup slide camera transitions initially
-        // MindfulnessGameManager.Instance.FocusModule(0);
+        // 8. Create Onboarding Manager (First launch assessment UI)
+        GameObject onboardingManager = new GameObject("OnboardingManager");
+        onboardingManager.AddComponent<OnboardingManager>();
+        Undo.RegisterCreatedObjectUndo(onboardingManager, "Create Onboarding Manager");
 
         // Mark scene dirty
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -300,8 +302,14 @@ public class SetupDemoScene : EditorWindow
         GameObject oldGameManager = GameObject.Find("MindfulnessGameManager");
         if (oldGameManager != null) Undo.DestroyObjectImmediate(oldGameManager);
 
+        GameObject oldOnboardingManager = GameObject.Find("OnboardingManager");
+        if (oldOnboardingManager != null) Undo.DestroyObjectImmediate(oldOnboardingManager);
+
         GameObject oldCanvas = GameObject.Find("MobileControlsCanvas");
         if (oldCanvas != null) Undo.DestroyObjectImmediate(oldCanvas);
+
+        GameObject oldOnboardingCanvas = GameObject.Find("OnboardingCanvas");
+        if (oldOnboardingCanvas != null) Undo.DestroyObjectImmediate(oldOnboardingCanvas);
         
         // Clean leftover items
         GameObject[] leftoverCrystals = GameObject.FindGameObjectsWithTag("MemoryCrystal");
