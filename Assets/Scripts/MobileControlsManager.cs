@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 
 public class MobileControlsManager : MonoBehaviour
 {
+    public static MobileControlsManager Instance { get; private set; }
+
     [Header("Sensitivity Settings")]
     public float mobileLookSensitivity = 0.05f;
 
@@ -13,6 +15,12 @@ public class MobileControlsManager : MonoBehaviour
 
     private GameObject canvasInstance;
     private VirtualJoystick activeJoystick;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
     // UI Elements references
     private GameObject joystickBG;
@@ -148,8 +156,8 @@ public class MobileControlsManager : MonoBehaviour
             modeToggleText.text = mgm.isSlideNavigationActive ? "FREIER MODUS" : "DIASHOW MODUS";
         }
 
-        // Update Mascot Tip text based on active island
-        if (mascotTipText != null)
+        // Update Mascot Tip text based on active island (only if no active story override message is showing)
+        if (mascotTipText != null && storyMessageOverrideTimer <= 0f)
         {
             switch (mgm.currentModuleIndex)
             {

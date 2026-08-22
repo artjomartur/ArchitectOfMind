@@ -270,6 +270,65 @@ public class SetupDemoScene : EditorWindow
         // Scatter grass and flowers around the ancient ruins
         ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(100f, 0.5f, 0f), 6f, 15, island5.transform);
 
+        // --- PHYSICAL STORY BRIDGES & GATES ---
+        GameObject storyHolder = new GameObject("StoryProgressObjects");
+        storyHolder.transform.SetParent(islandsHolder.transform);
+
+        // 1. Bridge from Island 1 to Island 2
+        GameObject bridge1to2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bridge1to2.name = "Bridge_1to2";
+        bridge1to2.transform.position = new Vector3(12.5f, 0f, 0f);
+        bridge1to2.transform.localScale = new Vector3(13f, 0.2f, 2.5f);
+        bridge1to2.GetComponent<Renderer>().material = woodMat;
+        bridge1to2.transform.SetParent(storyHolder.transform);
+
+        // 2. Crystal Gate blocking Island 1 to 2
+        GameObject gate1 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        gate1.name = "Gate_1to2";
+        gate1.transform.position = new Vector3(12.5f, 1.5f, 0f);
+        gate1.transform.localScale = new Vector3(0.5f, 3f, 3f);
+        gate1.GetComponent<Renderer>().material = crystalMat;
+        gate1.transform.SetParent(storyHolder.transform);
+
+        // 3. Thorn Gate blocking Island 2 to 3
+        GameObject gate2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        gate2.name = "Gate_2to3";
+        gate2.transform.position = new Vector3(31.5f, 1.5f, 0f);
+        gate2.transform.localScale = new Vector3(0.5f, 3f, 3f);
+        gate2.GetComponent<Renderer>().material = darkRockMat;
+        gate2.transform.SetParent(storyHolder.transform);
+
+        // 4. Bridge from Island 3 to Island 4
+        GameObject bridge3to4 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bridge3to4.name = "Bridge_3to4";
+        bridge3to4.transform.position = new Vector3(64.5f, 0f, 0f);
+        bridge3to4.transform.localScale = new Vector3(10f, 0.2f, 2.5f);
+        bridge3to4.GetComponent<Renderer>().material = woodMat;
+        bridge3to4.transform.SetParent(storyHolder.transform);
+
+        // 5. Energy Shield Gate blocking Island 3 to 4
+        GameObject gate3 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        gate3.name = "Gate_3to4";
+        gate3.transform.position = new Vector3(64.5f, 1.5f, 0f);
+        gate3.transform.localScale = new Vector3(0.5f, 3f, 3f);
+        gate3.GetComponent<Renderer>().material = crystalMat;
+        gate3.transform.SetParent(storyHolder.transform);
+
+        // 6. Bridge from Island 4 to Island 5
+        GameObject bridge4to5 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bridge4to5.name = "Bridge_4to5";
+        bridge4to5.transform.position = new Vector3(87.0f, 0f, 0f);
+        bridge4to5.transform.localScale = new Vector3(11f, 0.2f, 2.5f);
+        bridge4to5.GetComponent<Renderer>().material = woodMat;
+        bridge4to5.transform.SetParent(storyHolder.transform);
+
+        // 7. Wood Fence Gate blocking Island 4 to 5
+        GameObject gate4 = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        gate4.name = "Gate_4to5";
+        gate4.transform.position = new Vector3(87.0f, 1.5f, 0f);
+        gate4.transform.localScale = new Vector3(0.5f, 3f, 3f);
+        gate4.GetComponent<Renderer>().material = woodMat;
+        gate4.transform.SetParent(storyHolder.transform);
 
         // --- CREATE PLAYER & MANAGERS ---
         // Configure and load textures as sprites (uses dynamic Texture2D fallback if AssetDatabase isn't updated)
@@ -357,6 +416,15 @@ public class SetupDemoScene : EditorWindow
         om.foxMeditatingSprite = foxMed;
         om.foxHappySprite = foxHap;
         Undo.RegisterCreatedObjectUndo(onboardingManager, "Create Onboarding Manager");
+
+        // 9. Create Story Manager (Handles progression gates and narrative alerts)
+        GameObject storyManagerObj = new GameObject("StoryManager");
+        var sm = storyManagerObj.AddComponent<StoryManager>();
+        sm.gate1to2 = gate1;
+        sm.gate2to3 = gate2;
+        sm.gate3to4 = gate3;
+        sm.gate4to5 = gate4;
+        Undo.RegisterCreatedObjectUndo(storyManagerObj, "Create Story Manager");
 
         // Mark scene dirty
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -551,6 +619,9 @@ public class SetupDemoScene : EditorWindow
 
         GameObject oldOnboardingManager = GameObject.Find("OnboardingManager");
         if (oldOnboardingManager != null) Undo.DestroyObjectImmediate(oldOnboardingManager);
+
+        GameObject oldStoryManager = GameObject.Find("StoryManager");
+        if (oldStoryManager != null) Undo.DestroyObjectImmediate(oldStoryManager);
 
         GameObject oldCanvas = GameObject.Find("MobileControlsCanvas");
         if (oldCanvas != null) Undo.DestroyObjectImmediate(oldCanvas);
