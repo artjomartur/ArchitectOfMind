@@ -21,6 +21,9 @@ public class FirstPersonController : MonoBehaviour
     private float rotationX = 0f;
     private bool isGrounded;
 
+    [Header("Intro Cutscene")]
+    public bool isAutoWalkingToIntro = true;
+
     // Mobile Input States
     private Vector2 mobileMoveInput = Vector2.zero;
     private Vector2 mobileLookInput = Vector2.zero;
@@ -31,11 +34,9 @@ public class FirstPersonController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         playerCamera = GetComponentInChildren<Camera>();
         
-        // Hide and lock cursor ONLY if not on mobile/touch screen devices
-#if !UNITY_ANDROID && !UNITY_IOS
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-#endif
+        // Unlock cursor initially during onboarding so the player can interact with the questionnaire
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     void Update()
@@ -45,6 +46,38 @@ public class FirstPersonController : MonoBehaviour
         if (isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
+        }
+
+        // Auto-run cutscene at start: move Fox automatically to the first platform starting position (Z = -1.5f)
+        if (isAutoWalkingToIntro)
+        {
+            Vector3 target = new Vector3(0f, transform.position.y, -1.5f);
+            Vector3 dir = (target - transform.position);
+            dir.y = 0f; // horizontal only
+            
+            if (dir.magnitude > 0.1f)
+            {
+                dir.Normalize();
+                characterController.Move(dir * walkSpeed * Time.deltaTime);
+                
+                // Keep Fox facing forward along the path
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(Vector3.forward), 8f * Time.deltaTime);
+            }
+            else
+            {
+                isAutoWalkingToIntro = false; // give control to the player!
+                
+                // Hide and lock cursor ONLY if not on mobile/touch screen devices
+#if !UNITY_ANDROID && !UNITY_IOS
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+#endif
+            }
+
+            // Apply gravity so the Fox stays grounded during auto-walk
+            velocity.y += gravity * Time.deltaTime;
+            characterController.Move(velocity * Time.deltaTime);
+            return;
         }
 
         // --- LOOK ---

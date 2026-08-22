@@ -419,11 +419,7 @@ public class SetupDemoScene : EditorWindow
 
         // 9. Create Story Manager (Handles progression gates and narrative alerts)
         GameObject storyManagerObj = new GameObject("StoryManager");
-        var sm = storyManagerObj.AddComponent<StoryManager>();
-        sm.gate1to2 = gate1;
-        sm.gate2to3 = gate2;
-        sm.gate3to4 = gate3;
-        sm.gate4to5 = gate4;
+        storyManagerObj.AddComponent<StoryManager>();
         Undo.RegisterCreatedObjectUndo(storyManagerObj, "Create Story Manager");
 
         // Mark scene dirty
