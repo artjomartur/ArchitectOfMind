@@ -16,8 +16,11 @@ public class MindArchitect : MonoBehaviour
     public Color[] buildColors = new Color[] {
         Color.red, Color.green, Color.blue, Color.yellow, Color.magenta, Color.cyan, Color.white
     };
-    private int currentColorIndex = 0;
+    [Header("UI Sprites for Puzzle")]
+    public Sprite panelSprite;
+    public Sprite buttonSprite;
 
+    private int currentColorIndex = 0;
     private Camera playerCamera;
     private Rigidbody grabbedRigidbody;
     private float currentGrabDistance;
@@ -315,7 +318,9 @@ public class MindArchitect : MonoBehaviour
                     if (RestructurePuzzleManager.Instance == null && MindfulnessGameManager.Instance != null && !MindfulnessGameManager.Instance.isDialogueRestructured)
                     {
                         GameObject go = new GameObject("RestructurePuzzleManager");
-                        go.AddComponent<RestructurePuzzleManager>();
+                        var rpm = go.AddComponent<RestructurePuzzleManager>();
+                        rpm.panelSprite = panelSprite;
+                        rpm.buttonSprite = buttonSprite;
                     }
                 }
 

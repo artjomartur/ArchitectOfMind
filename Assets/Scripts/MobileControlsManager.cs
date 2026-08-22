@@ -22,6 +22,15 @@ public class MobileControlsManager : MonoBehaviour
     private Text modeToggleText;
     private Text hudBlockCountText;
 
+    [Header("UI Sprites & Mascot")]
+    public Sprite panelSprite;
+    public Sprite backSprite;
+    public Sprite nextSprite;
+    public Sprite foxExplainingSprite;
+
+    private Text mascotTipText;
+    private Image mascotHUDImage;
+
     private string[] moduleNames = new string[] {
         "ACHTSAMES WACHSEN\nSamen durch tägliche Dankbarkeit pflegen.",
         "INNERER DIALOG\nPositive innere Stimmen stärken.",
@@ -131,6 +140,33 @@ public class MobileControlsManager : MonoBehaviour
         if (modeToggleText != null)
         {
             modeToggleText.text = mgm.isSlideNavigationActive ? "FREIER MODUS" : "DIASHOW MODUS";
+        }
+
+        // Update Mascot Tip text based on active island
+        if (mascotTipText != null)
+        {
+            switch (mgm.currentModuleIndex)
+            {
+                case 0:
+                    mascotTipText.text = "Atme tief ein. Wenn du dankbar bist, gieße deinen Spross und sieh ihm beim Wachsen zu!";
+                    break;
+                case 1:
+                    mascotTipText.text = "Gedanken ziehen vorüber. Klicke rote Gedankenblasen weg und tippe auf den dornigen Fels zum Umstrukturieren!";
+                    break;
+                case 2:
+                    mascotTipText.text = "Erinnerungen stärken uns. Folge dem Pfad und sammle alle rotierenden Kristalle ein!";
+                    break;
+                case 3:
+                    mascotTipText.text = "Fokus lenkt ab. Gieße das Beet, um den Schutzbaum wachsen zu lassen und Stress abzuwehren!";
+                    break;
+                case 4:
+                    mascotTipText.text = "Heilung gelingt gemeinsam. Klicke die umgestürzten Säulen an, um den antiken Tempel aufzubauen!";
+                    break;
+            }
+            if (mascotHUDImage != null && foxExplainingSprite != null)
+            {
+                mascotHUDImage.sprite = foxExplainingSprite;
+            }
         }
 
         // Update Stats text
@@ -268,19 +304,20 @@ public class MobileControlsManager : MonoBehaviour
     private void CreateSlideHeader(Transform parent, Font font)
     {
         // 1. Navigation Panel (Top Bar background)
-        GameObject headerPanel = CreateImage(parent, "HeaderPanel", new Vector2(1800, 150), new Vector2(0, -100), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Color(0, 0, 0, 0.4f));
+        // 1. Navigation Panel (Top Bar background)
+        GameObject headerPanel = CreateImage(parent, "HeaderPanel", new Vector2(1800, 150), new Vector2(0, -100), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Color.white, panelSprite);
 
-        // 2. Left Arrow Button
-        GameObject leftArrow = CreateButton(headerPanel.transform, "LeftArrow", new Vector2(100, 100), new Vector2(80, 0), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Color(0.3f, 0.3f, 0.3f, 0.8f));
-        CreateText(leftArrow.transform, "<", font, 36, Color.white);
+        // 2. Left Arrow Button (uses backSprite)
+        GameObject leftArrow = CreateButton(headerPanel.transform, "LeftArrow", new Vector2(100, 100), new Vector2(80, 0), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Color.white, backSprite);
+        if (backSprite == null) CreateText(leftArrow.transform, "<", font, 36, Color.white); // fallback text
         leftArrow.GetComponent<Button>().onClick.AddListener(() =>
         {
             if (MindfulnessGameManager.Instance != null) MindfulnessGameManager.Instance.PrevModule();
         });
 
-        // 3. Right Arrow Button
-        GameObject rightArrow = CreateButton(headerPanel.transform, "RightArrow", new Vector2(100, 100), new Vector2(-80, 0), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Color(0.3f, 0.3f, 0.3f, 0.8f));
-        CreateText(rightArrow.transform, ">", font, 36, Color.white);
+        // 3. Right Arrow Button (uses nextSprite)
+        GameObject rightArrow = CreateButton(headerPanel.transform, "RightArrow", new Vector2(100, 100), new Vector2(-80, 0), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), Color.white, nextSprite);
+        if (nextSprite == null) CreateText(rightArrow.transform, ">", font, 36, Color.white); // fallback text
         rightArrow.GetComponent<Button>().onClick.AddListener(() =>
         {
             if (MindfulnessGameManager.Instance != null) MindfulnessGameManager.Instance.NextModule();
@@ -333,25 +370,49 @@ public class MobileControlsManager : MonoBehaviour
 
     private void CreateStatsOverlay(Transform parent, Font font)
     {
-        GameObject statsPanel = CreateImage(parent, "StatsPanel", new Vector2(400, 350), new Vector2(250, -400), new Vector2(0f, 1f), new Vector2(0f, 1f), new Color(0, 0, 0, 0.5f));
+        // 1. Stats Panel (styled with panelSprite)
+        GameObject statsPanel = CreateImage(parent, "StatsPanel", new Vector2(400, 320), new Vector2(250, -460), new Vector2(0f, 1f), new Vector2(0f, 1f), Color.white, panelSprite);
         
         GameObject statsGO = new GameObject("StatsText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
         statsGO.transform.SetParent(statsPanel.transform, false);
         RectTransform rt = statsGO.GetComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
-        rt.offsetMin = new Vector2(20, 20);
-        rt.offsetMax = new Vector2(-20, -20);
+        rt.offsetMin = new Vector2(25, 25);
+        rt.offsetMax = new Vector2(-25, -25);
 
         statsText = statsGO.GetComponent<Text>();
         statsText.font = font;
-        statsText.fontSize = 22;
+        statsText.fontSize = 21;
         statsText.alignment = TextAnchor.UpperLeft;
         statsText.color = Color.white;
+
+        // 2. Mascot Tip Speech Bubble Panel (matching Duolingo tip style)
+        GameObject tipPanel = CreateImage(parent, "MascotTipPanel", new Vector2(400, 180), new Vector2(250, -180), new Vector2(0f, 1f), new Vector2(0f, 1f), Color.white, panelSprite);
+
+        // Mascot Head Image inside the Tip Panel (left side)
+        GameObject mHead = CreateImage(tipPanel.transform, "MascotHead", new Vector2(110, 110), new Vector2(70, 0), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Color.white, foxExplainingSprite);
+        mascotHUDImage = mHead.GetComponent<Image>();
+
+        // Tip text (right side)
+        GameObject tipTextGO = new GameObject("TipText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        tipTextGO.transform.SetParent(tipPanel.transform, false);
+        RectTransform tipTextRT = tipTextGO.GetComponent<RectTransform>();
+        tipTextRT.anchorMin = new Vector2(0.35f, 0.1f);
+        tipTextRT.anchorMax = new Vector2(0.95f, 0.9f);
+        tipTextRT.sizeDelta = Vector2.zero;
+
+        mascotTipText = tipTextGO.GetComponent<Text>();
+        mascotTipText.font = font;
+        mascotTipText.fontSize = 18;
+        mascotTipText.alignment = TextAnchor.MiddleLeft;
+        mascotTipText.color = Color.white;
+        mascotTipText.text = "Atme tief ein. Wenn du dankbar bist, gieße deinen Spross!";
+        mascotTipText.raycastTarget = false;
     }
 
     // --- HELPER CREATION METHODS ---
-    private GameObject CreateImage(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color)
+    private GameObject CreateImage(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color, Sprite sprite = null)
     {
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         go.transform.SetParent(parent, false);
@@ -362,13 +423,15 @@ public class MobileControlsManager : MonoBehaviour
         rt.anchoredPosition = anchoredPos;
         rt.sizeDelta = size;
         
-        go.GetComponent<Image>().color = color;
+        Image img = go.GetComponent<Image>();
+        img.sprite = sprite;
+        img.color = (sprite != null && color == Color.clear) ? Color.white : color;
         return go;
     }
 
-    private GameObject CreateButton(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color)
+    private GameObject CreateButton(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color, Sprite sprite = null)
     {
-        GameObject go = CreateImage(parent, name, size, anchoredPos, anchorMin, anchorMax, color);
+        GameObject go = CreateImage(parent, name, size, anchoredPos, anchorMin, anchorMax, color, sprite);
         go.AddComponent<Button>();
         return go;
     }

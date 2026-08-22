@@ -272,6 +272,27 @@ public class SetupDemoScene : EditorWindow
 
 
         // --- CREATE PLAYER & MANAGERS ---
+        // Configure textures as sprites programmatically to prevent UI nullref errors
+        ConfigureAsSprite("Assets/Basic/Textures/panel_horizontal.png");
+        ConfigureAsSprite("Assets/Basic/Textures/panel_vertical.png");
+        ConfigureAsSprite("Assets/Basic/Textures/back_grey.png");
+        ConfigureAsSprite("Assets/Basic/Textures/next_grey.png");
+        ConfigureAsSprite("Assets/Basic/Textures/PlayButton_grey.png");
+        ConfigureAsSprite("Assets/Basic/Textures/fox_meditating.jpg");
+        ConfigureAsSprite("Assets/Basic/Textures/fox_happy.jpg");
+        ConfigureAsSprite("Assets/Basic/Textures/fox_explaining.jpg");
+
+        Sprite pH = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/panel_horizontal.png");
+        Sprite pV = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/panel_vertical.png");
+        Sprite backArr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/back_grey.png");
+        Sprite nextArr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/next_grey.png");
+        Sprite btnG = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/PlayButton_grey.png");
+        Sprite foxMed = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/fox_meditating.jpg");
+        Sprite foxHap = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/fox_happy.jpg");
+        Sprite foxExp = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/fox_explaining.jpg");
+
+        GameObject foxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fox/Prefabs/Fox.prefab");
+
         // 4. Create Player
         GameObject player = new GameObject("Player");
         player.transform.position = new Vector3(0f, 0.5f, -3f); // Spawns looking at the first island
@@ -282,13 +303,30 @@ public class SetupDemoScene : EditorWindow
         cc.radius = 0.5f;
 
         player.AddComponent<FirstPersonController>();
-        player.AddComponent<MindArchitect>();
+        var ma = player.AddComponent<MindArchitect>();
+        ma.panelSprite = pH;
+        ma.buttonSprite = btnG;
 
-        // Create Player Camera child
+        // Instantiate playable 3D Fox model under player
+        if (foxPrefab != null)
+        {
+            GameObject foxInstance = PrefabUtility.InstantiatePrefab(foxPrefab) as GameObject;
+            foxInstance.name = "FoxModel";
+            foxInstance.transform.SetParent(player.transform, false);
+            foxInstance.transform.localPosition = new Vector3(0f, 0f, 0f);
+            foxInstance.transform.localRotation = Quaternion.identity;
+            
+            // Add custom animation script and convert materials to URP Lit using reflection to avoid Editor compilation order issues
+            System.Type animType = System.Type.GetType("FoxAnimationController, Assembly-CSharp");
+            if (animType != null) foxInstance.AddComponent(animType);
+            ConvertMaterialsToURPLit(foxInstance);
+        }
+
+        // Create Player Camera child (Third Person view behind the Fox)
         GameObject camObj = new GameObject("PlayerCamera");
         camObj.transform.parent = player.transform;
-        camObj.transform.localPosition = new Vector3(0f, 1.8f, 0f);
-        camObj.transform.localRotation = Quaternion.identity;
+        camObj.transform.localPosition = new Vector3(0f, 2.5f, -4.5f); // placed 4.5m behind, 2.5m high
+        camObj.transform.localRotation = Quaternion.Euler(15f, 0f, 0f); // tilted down 15 degrees
         
         Camera camera = camObj.AddComponent<Camera>();
         camera.tag = "MainCamera";
@@ -313,12 +351,20 @@ public class SetupDemoScene : EditorWindow
 
         // 7. Create Mobile Controls Manager (Touch UI Overlay)
         GameObject mobileControlsManager = new GameObject("MobileControlsManager");
-        mobileControlsManager.AddComponent<MobileControlsManager>();
+        var mcm = mobileControlsManager.AddComponent<MobileControlsManager>();
+        mcm.panelSprite = pH;
+        mcm.backSprite = backArr;
+        mcm.nextSprite = nextArr;
+        mcm.foxExplainingSprite = foxExp;
         Undo.RegisterCreatedObjectUndo(mobileControlsManager, "Create Mobile Controls Manager");
 
         // 8. Create Onboarding Manager (First launch assessment UI)
         GameObject onboardingManager = new GameObject("OnboardingManager");
-        onboardingManager.AddComponent<OnboardingManager>();
+        var om = onboardingManager.AddComponent<OnboardingManager>();
+        om.panelSprite = pV;
+        om.buttonSprite = btnG;
+        om.foxMeditatingSprite = foxMed;
+        om.foxHappySprite = foxHap;
         Undo.RegisterCreatedObjectUndo(onboardingManager, "Create Onboarding Manager");
 
         // Mark scene dirty
@@ -337,6 +383,7 @@ public class SetupDemoScene : EditorWindow
             go.transform.position = pos;
             go.transform.localScale = scale;
             go.transform.rotation = rot;
+            ConvertMaterialsToURPLit(go);
         }
         else
         {
@@ -349,6 +396,67 @@ public class SetupDemoScene : EditorWindow
         }
         if (parent != null) go.transform.SetParent(parent);
         return go;
+    }
+
+    private static void ConvertMaterialsToURPLit(GameObject go)
+    {
+        Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
+        foreach (var r in renderers)
+        {
+            // Note: use sharedMaterials in editor setup to avoid instancing materials on disk unnecessarily
+            Material[] mats = r.sharedMaterials;
+            for (int i = 0; i < mats.Length; i++)
+            {
+                if (mats[i] != null)
+                {
+                    // Create a new URP Lit material
+                    Material newMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                    
+                    // Copy main color or guess color from name
+                    if (mats[i].HasProperty("_Color"))
+                    {
+                        newMat.color = mats[i].color;
+                    }
+                    else if (mats[i].HasProperty("_BaseColor"))
+                    {
+                        newMat.color = mats[i].GetColor("_BaseColor");
+                    }
+                    else
+                    {
+                        string matName = mats[i].name.ToLower();
+                        if (matName.Contains("grass") || matName.Contains("leaf") || matName.Contains("leaves") || matName.Contains("flower"))
+                        {
+                            newMat.color = new Color(0.2f, 0.65f, 0.2f);
+                        }
+                        else if (matName.Contains("wood") || matName.Contains("trunk") || matName.Contains("bark"))
+                        {
+                            newMat.color = new Color(0.45f, 0.3f, 0.15f);
+                        }
+                        else if (matName.Contains("rock") || matName.Contains("stone") || matName.Contains("boulder"))
+                        {
+                            newMat.color = new Color(0.4f, 0.4f, 0.45f);
+                        }
+                        else
+                        {
+                            newMat.color = Color.grey;
+                        }
+                    }
+
+                    // Copy texture if present
+                    if (mats[i].HasProperty("_MainTex") && mats[i].GetTexture("_MainTex") != null)
+                    {
+                        newMat.SetTexture("_BaseMap", mats[i].GetTexture("_MainTex"));
+                    }
+                    else if (mats[i].HasProperty("_BaseMap") && mats[i].GetTexture("_BaseMap") != null)
+                    {
+                        newMat.SetTexture("_BaseMap", mats[i].GetTexture("_BaseMap"));
+                    }
+
+                    mats[i] = newMat;
+                }
+            }
+            r.sharedMaterials = mats;
+        }
     }
 
     private static void ScatterGrassAndFlowers(GameObject grassPrefab, GameObject flowerPrefab, Vector3 center, float radius, int count, Transform parent)
@@ -379,6 +487,16 @@ public class SetupDemoScene : EditorWindow
                     SpawnLowPolyOrPrimitive(flowerPrefab, PrimitiveType.Cube, "FlowerPatch", pos, Vector3.one * Random.Range(0.8f, 1.2f), Quaternion.Euler(0, Random.Range(0, 360), 0), parent);
                 }
             }
+        }
+    }
+
+    private static void ConfigureAsSprite(string assetPath)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+        if (importer != null && importer.textureType != TextureImporterType.Sprite)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.SaveAndReimport();
         }
     }
 

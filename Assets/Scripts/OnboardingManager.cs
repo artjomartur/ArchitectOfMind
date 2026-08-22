@@ -6,6 +6,13 @@ public class OnboardingManager : MonoBehaviour
 {
     public static OnboardingManager Instance { get; private set; }
 
+    [Header("UI & Mascot Sprites")]
+    public Sprite panelSprite;
+    public Sprite buttonSprite;
+    public Sprite foxMeditatingSprite;
+    public Sprite foxHappySprite;
+
+    private Image mascotImage;
     private int currentStep = 0;
     private int[] answers = new int[4];
 
@@ -80,28 +87,33 @@ public class OnboardingManager : MonoBehaviour
         bgRT.anchorMax = Vector2.one;
         bgRT.sizeDelta = Vector2.zero;
 
-        // 3. Central card panel
-        GameObject card = CreateImage(bgPanel.transform, "Card", new Vector2(800, 700), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.18f, 0.26f, 0.35f, 1f));
+        // 3. Central card panel (widened for mascot)
+        GameObject card = CreateImage(bgPanel.transform, "Card", new Vector2(1050, 750), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, panelSprite);
 
-        // 4. Header title
+        // Mascot Panel on the Left
+        GameObject mascotBG = CreateImage(card.transform, "MascotBG", new Vector2(320, 320), new Vector2(-320, -20), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0f, 0f, 0f, 0.2f));
+        GameObject mascotGO = CreateImage(mascotBG.transform, "MascotImage", new Vector2(300, 300), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, foxMeditatingSprite);
+        mascotImage = mascotGO.GetComponent<Image>();
+
+        // 4. Header title (shifted right)
         GameObject header = CreateText(card.transform, "ARCHITECT OF MIND\n- Mentales Onboarding -", font, 36, Color.yellow);
         RectTransform headerRT = header.GetComponent<RectTransform>();
-        headerRT.anchorMin = new Vector2(0f, 0.8f);
-        headerRT.anchorMax = new Vector2(1f, 0.95f);
+        headerRT.anchorMin = new Vector2(0.35f, 0.8f);
+        headerRT.anchorMax = new Vector2(0.95f, 0.95f);
         headerRT.sizeDelta = Vector2.zero;
 
-        // 5. Progress indicator
+        // 5. Progress indicator (shifted right)
         GameObject progressGO = CreateText(card.transform, "Schritt 1 von 4", font, 22, new Color(0.8f, 0.8f, 0.8f));
         RectTransform progRT = progressGO.GetComponent<RectTransform>();
-        progRT.anchorMin = new Vector2(0f, 0.72f);
-        progRT.anchorMax = new Vector2(1f, 0.78f);
+        progRT.anchorMin = new Vector2(0.35f, 0.72f);
+        progRT.anchorMax = new Vector2(0.95f, 0.78f);
         progRT.sizeDelta = Vector2.zero;
         progressText = progressGO.GetComponent<Text>();
 
-        // 6. Question Text
+        // 6. Question Text (shifted right)
         GameObject questGO = CreateText(card.transform, "Frage hier...", font, 28, Color.white);
         RectTransform questRT = questGO.GetComponent<RectTransform>();
-        questRT.anchorMin = new Vector2(0.05f, 0.5f);
+        questRT.anchorMin = new Vector2(0.35f, 0.5f);
         questRT.anchorMax = new Vector2(0.95f, 0.7f);
         questRT.sizeDelta = Vector2.zero;
         questionText = questGO.GetComponent<Text>();
@@ -137,7 +149,8 @@ public class OnboardingManager : MonoBehaviour
             int optionIndex = i;
             float yPos = startY + i * (buttonHeight + spacing);
 
-            GameObject button = CreateButton(card.transform, $"Option_{i}", new Vector2(600, buttonHeight), new Vector2(0, yPos - 120f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.24f, 0.35f, 0.46f, 1f));
+            // Shift buttons right (X: 180) to keep card side-by-side with mascot
+            GameObject button = CreateButton(card.transform, $"Option_{i}", new Vector2(550, buttonHeight), new Vector2(180f, yPos - 120f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, buttonSprite);
             CreateText(button.transform, currentOptions[i], font, 24, Color.white);
             
             button.GetComponent<Button>().onClick.AddListener(() =>
@@ -160,7 +173,14 @@ public class OnboardingManager : MonoBehaviour
         }
         else
         {
-            CompleteOnboarding();
+            // Show happy fox mascot cheering upon completing onboarding questionnaire!
+            if (mascotImage != null && foxHappySprite != null)
+            {
+                mascotImage.sprite = foxHappySprite;
+            }
+            
+            // Wait 1.2 seconds before completing onboarding to let the player see the happy fox!
+            Invoke("CompleteOnboarding", 1.2f);
         }
     }
 
@@ -217,7 +237,7 @@ public class OnboardingManager : MonoBehaviour
     }
 
     // --- HELPER CREATION METHODS ---
-    private GameObject CreateImage(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color)
+    private GameObject CreateImage(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color, Sprite sprite = null)
     {
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         go.transform.SetParent(parent, false);
@@ -228,13 +248,15 @@ public class OnboardingManager : MonoBehaviour
         rt.anchoredPosition = anchoredPos;
         rt.sizeDelta = size;
         
-        go.GetComponent<Image>().color = color;
+        Image img = go.GetComponent<Image>();
+        img.sprite = sprite;
+        img.color = (sprite != null && color == Color.clear) ? Color.white : color;
         return go;
     }
 
-    private GameObject CreateButton(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color)
+    private GameObject CreateButton(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color, Sprite sprite = null)
     {
-        GameObject go = CreateImage(parent, name, size, anchoredPos, anchorMin, anchorMax, color);
+        GameObject go = CreateImage(parent, name, size, anchoredPos, anchorMin, anchorMax, color, sprite);
         go.AddComponent<Button>();
         return go;
     }

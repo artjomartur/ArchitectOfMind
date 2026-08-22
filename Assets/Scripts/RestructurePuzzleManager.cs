@@ -6,6 +6,10 @@ public class RestructurePuzzleManager : MonoBehaviour
 {
     public static RestructurePuzzleManager Instance { get; private set; }
 
+    [Header("UI Sprites")]
+    public Sprite panelSprite;
+    public Sprite buttonSprite;
+
     private GameObject puzzleCanvas;
     private Text tooltipText;
     private GameObject solveButton;
@@ -69,8 +73,8 @@ public class RestructurePuzzleManager : MonoBehaviour
         bgRT.anchorMax = Vector2.one;
         bgRT.sizeDelta = Vector2.zero;
 
-        // 2. Central Puzzle Card
-        GameObject card = CreateImage(bgPanel.transform, "PuzzleCard", new Vector2(700, 750), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.12f, 0.18f, 0.24f, 1f));
+        // 2. Central Puzzle Card (styled with panelSprite)
+        GameObject card = CreateImage(bgPanel.transform, "PuzzleCard", new Vector2(700, 750), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, panelSprite);
 
         // 3. Title Header
         GameObject titleGO = CreateText(card.transform, "GEDANKEN UMSTRUKTURIEREN", font, 28, Color.yellow);
@@ -80,7 +84,7 @@ public class RestructurePuzzleManager : MonoBehaviour
         titleRT.sizeDelta = Vector2.zero;
 
         // 4. Puzzle Area (Grid representation of blocks)
-        GameObject gridPanel = CreateImage(card.transform, "GridPanel", new Vector2(500, 200), new Vector2(0, 100), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.08f, 0.12f, 0.16f, 1f));
+        GameObject gridPanel = CreateImage(card.transform, "GridPanel", new Vector2(500, 200), new Vector2(0, 100), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, panelSprite);
 
         // Spawn 3 dark/cracked blocks on the left of the grid
         for (int i = 0; i < 3; i++)
@@ -102,14 +106,14 @@ public class RestructurePuzzleManager : MonoBehaviour
             CreateText(block.transform, "?", font, 24, new Color(0.4f, 0.4f, 0.4f));
         }
 
-        // 5. Interactive Resource Blocks (Click to structure)
-        GameObject selectorPanel = CreateImage(card.transform, "SelectorPanel", new Vector2(550, 120), new Vector2(0, -90), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.08f, 0.12f, 0.16f, 0.5f));
+        // 5. Interactive Resource Blocks (styled with panelSprite and buttonSprite)
+        GameObject selectorPanel = CreateImage(card.transform, "SelectorPanel", new Vector2(550, 120), new Vector2(0, -90), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, panelSprite);
         
         string[] btnLabels = new string[] { "HOBBY", "SOCIAL", "MEDITATION" };
         for (int i = 0; i < 3; i++)
         {
             int index = i;
-            GameObject btn = CreateButton(selectorPanel.transform, $"ResourceBtn_{i}", new Vector2(140, 80), new Vector2(-160 + i * 160, 0), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), puzzleColors[i]);
+            GameObject btn = CreateButton(selectorPanel.transform, $"ResourceBtn_{i}", new Vector2(140, 80), new Vector2(-160 + i * 160, 0), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), puzzleColors[i], buttonSprite);
             CreateText(btn.transform, btnLabels[i], font, 20, Color.white);
             
             btn.GetComponent<Button>().onClick.AddListener(() =>
@@ -118,17 +122,17 @@ public class RestructurePuzzleManager : MonoBehaviour
             });
         }
 
-        // 6. Tooltip Dialog Text Box
-        GameObject tooltipPanel = CreateImage(card.transform, "TooltipPanel", new Vector2(600, 160), new Vector2(0, -250), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.08f, 0.12f, 0.16f, 0.8f));
+        // 6. Tooltip Dialog Text Box (styled with panelSprite)
+        GameObject tooltipPanel = CreateImage(card.transform, "TooltipPanel", new Vector2(600, 160), new Vector2(0, -250), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, panelSprite);
         GameObject textGO = CreateText(tooltipPanel.transform, negativeThought, font, 20, Color.red);
         RectTransform textRT = textGO.GetComponent<RectTransform>();
-        textRT.offsetMin = new Vector2(15, 15);
-        textRT.offsetMax = new Vector2(-15, -15);
+        textRT.offsetMin = new Vector2(20, 20);
+        textRT.offsetMax = new Vector2(-20, -20);
         tooltipText = textGO.GetComponent<Text>();
         tooltipText.alignment = TextAnchor.MiddleCenter;
 
-        // 7. Solve / Proceed Button
-        solveButton = CreateButton(card.transform, "SolveButton", new Vector2(250, 70), new Vector2(0, -320), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.1f, 0.7f, 0.2f));
+        // 7. Solve / Proceed Button (styled with buttonSprite)
+        solveButton = CreateButton(card.transform, "SolveButton", new Vector2(250, 70), new Vector2(0, -320), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Color(0.1f, 0.7f, 0.2f), buttonSprite);
         CreateText(solveButton.transform, "UMSTRUKTURIEREN", font, 22, Color.white);
         solveButton.GetComponent<Button>().onClick.AddListener(() =>
         {
@@ -226,7 +230,7 @@ public class RestructurePuzzleManager : MonoBehaviour
     }
 
     // --- HELPER CREATION METHODS ---
-    private GameObject CreateImage(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color)
+    private GameObject CreateImage(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color, Sprite sprite = null)
     {
         GameObject go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         go.transform.SetParent(parent, false);
@@ -237,13 +241,15 @@ public class RestructurePuzzleManager : MonoBehaviour
         rt.anchoredPosition = anchoredPos;
         rt.sizeDelta = size;
         
-        go.GetComponent<Image>().color = color;
+        Image img = go.GetComponent<Image>();
+        img.sprite = sprite;
+        img.color = (sprite != null && color == Color.clear) ? Color.white : color;
         return go;
     }
 
-    private GameObject CreateButton(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color)
+    private GameObject CreateButton(Transform parent, string name, Vector2 size, Vector2 anchoredPos, Vector2 anchorMin, Vector2 anchorMax, Color color, Sprite sprite = null)
     {
-        GameObject go = CreateImage(parent, name, size, anchoredPos, anchorMin, anchorMax, color);
+        GameObject go = CreateImage(parent, name, size, anchoredPos, anchorMin, anchorMax, color, sprite);
         go.AddComponent<Button>();
         return go;
     }
