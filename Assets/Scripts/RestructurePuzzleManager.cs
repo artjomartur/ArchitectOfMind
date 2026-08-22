@@ -179,13 +179,13 @@ public class RestructurePuzzleManager : MonoBehaviour
         GameObject monolith = GameObject.Find("DialogueMonolith");
         if (monolith != null)
         {
-            // Turn monolith to white marble
-            Renderer renderer = monolith.GetComponent<Renderer>();
-            if (renderer != null)
+            // Turn monolith to white marble (supports nested prefab meshes)
+            Renderer[] renderers = monolith.GetComponentsInChildren<Renderer>();
+            foreach (var r in renderers)
             {
                 Material marbleMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 marbleMat.color = new Color(0.9f, 0.9f, 0.9f); // light marble
-                renderer.material = marbleMat;
+                r.material = marbleMat;
             }
 
             // Change World Space text
@@ -269,3 +269,4 @@ public class RestructurePuzzleManager : MonoBehaviour
         return go;
     }
 }
+

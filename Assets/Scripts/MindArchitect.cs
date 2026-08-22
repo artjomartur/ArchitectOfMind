@@ -332,15 +332,9 @@ public class MindArchitect : MonoBehaviour
                     GameObject tree = GameObject.Find("DistractionTree");
                     if (tree != null)
                     {
-                        Transform trunk = tree.transform.Find("Trunk");
-                        Transform leaves = tree.transform.Find("Leaves");
-                        if (leaves != null && trunk != null)
-                        {
-                            leaves.localScale += Vector3.one * 0.15f;
-                            trunk.localScale += new Vector3(0.05f, 0.1f, 0.05f);
-                            MindfulnessGameManager.Instance.treesPlanted++;
-                            MindfulnessGameManager.Instance.distractionSuccess = Mathf.Clamp01(MindfulnessGameManager.Instance.distractionSuccess + 0.1f);
-                        }
+                        tree.transform.localScale += Vector3.one * 0.15f;
+                        MindfulnessGameManager.Instance.treesPlanted++;
+                        MindfulnessGameManager.Instance.distractionSuccess = Mathf.Clamp01(MindfulnessGameManager.Instance.distractionSuccess + 0.1f);
                     }
                 }
 

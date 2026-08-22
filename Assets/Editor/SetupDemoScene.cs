@@ -44,6 +44,12 @@ public class SetupDemoScene : EditorWindow
         Material templeMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         templeMat.color = new Color(0.85f, 0.85f, 0.85f); // Light marble
 
+        // --- PREFABS SETUP ---
+        GameObject treePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Nicrom/Shaders/Wind/Prefabs/LPW_Tree_A1_6.5m_01.prefab");
+        GameObject boulderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Nicrom/Shaders/Wind/Prefabs/LPW_Rock_Boulder_A1_01.prefab");
+        GameObject grassPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Nicrom/Shaders/Wind/Prefabs/LPW_Grass_A1_50cm_01.prefab");
+        GameObject flowerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Nicrom/Shaders/Wind/Prefabs/LPW_Flower_A1_H70cm_01.prefab");
+
         // --- ISLAND 1: ACHTSAMES WACHSEN (X: 0) ---
         GameObject island1 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         island1.name = "Island_1_Wachsen";
@@ -68,6 +74,9 @@ public class SetupDemoScene : EditorWindow
         sproutMat.color = new Color(0.1f, 0.9f, 0.1f);
         sprout.GetComponent<Renderer>().material = sproutMat;
         sprout.transform.SetParent(island1.transform);
+
+        // Scatter grass and flowers around the island
+        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(0f, 0.5f, 0f), 5f, 10, island1.transform);
 
 
         // --- ISLAND 2: INNERER DIALOG (X: 25) ---
@@ -96,14 +105,14 @@ public class SetupDemoScene : EditorWindow
         bridge.GetComponent<Renderer>().material = woodMat;
         bridge.transform.SetParent(dialogueHolder.transform);
 
+        // Scatter grass and flowers on both Dialogue island platforms
+        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(21f, 0.5f, 0f), 2.5f, 6, dialogueHolder.transform);
+        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(29f, 0.1f, 0f), 2.5f, 4, dialogueHolder.transform);
+
         // --- DIALOGUE MONOLITH (Gedanken Umstrukturieren) ---
-        GameObject monolith = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        monolith.name = "DialogueMonolith";
+        // Using low-poly boulder prefab as base
+        GameObject monolith = SpawnLowPolyOrPrimitive(boulderPrefab, PrimitiveType.Cube, "DialogueMonolith", new Vector3(25f, 1.0f, 3.5f), new Vector3(1.5f, 2.5f, 1.5f), Quaternion.identity, dialogueHolder.transform, darkRockMat);
         monolith.tag = "DialogueMonolith";
-        monolith.transform.position = new Vector3(25f, 1.8f, 3.5f);
-        monolith.transform.localScale = new Vector3(1.5f, 3.5f, 1.5f);
-        monolith.GetComponent<Renderer>().material = darkRockMat;
-        monolith.transform.SetParent(dialogueHolder.transform);
 
         // Add thorny vine components
         Material thornMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
@@ -111,16 +120,16 @@ public class SetupDemoScene : EditorWindow
 
         GameObject thorn1 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         thorn1.name = "ThornVine_1";
-        thorn1.transform.position = new Vector3(24.6f, 1.8f, 2.7f);
-        thorn1.transform.localScale = new Vector3(0.12f, 1.9f, 0.12f);
+        thorn1.transform.position = new Vector3(24.6f, 1.5f, 2.7f);
+        thorn1.transform.localScale = new Vector3(0.12f, 1.5f, 0.12f);
         thorn1.transform.rotation = Quaternion.Euler(15f, 20f, 10f);
         thorn1.GetComponent<Renderer>().material = thornMat;
         thorn1.transform.SetParent(monolith.transform);
 
         GameObject thorn2 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         thorn2.name = "ThornVine_2";
-        thorn2.transform.position = new Vector3(25.4f, 1.8f, 2.7f);
-        thorn2.transform.localScale = new Vector3(0.12f, 1.9f, 0.12f);
+        thorn2.transform.position = new Vector3(25.4f, 1.5f, 2.7f);
+        thorn2.transform.localScale = new Vector3(0.12f, 1.5f, 0.12f);
         thorn2.transform.rotation = Quaternion.Euler(-15f, -20f, -10f);
         thorn2.GetComponent<Renderer>().material = thornMat;
         thorn2.transform.SetParent(monolith.transform);
@@ -128,7 +137,7 @@ public class SetupDemoScene : EditorWindow
         // World Space Canvas for Negative Thought text on the front of the monolith
         GameObject wsc = new GameObject("WorldSpaceCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         wsc.transform.SetParent(monolith.transform);
-        wsc.transform.localPosition = new Vector3(0f, 0.1f, -0.51f); // slightly in front of the monolith face
+        wsc.transform.localPosition = new Vector3(0f, 0.4f, -0.6f); // placed in front of the boulder face
         wsc.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // face the player
         wsc.transform.localScale = new Vector3(0.007f, 0.007f, 0.007f); // scale down to fit
 
@@ -180,6 +189,12 @@ public class SetupDemoScene : EditorWindow
             stone.GetComponent<Renderer>().material = darkRockMat;
             stone.transform.SetParent(pathHolder.transform);
 
+            // Scatter small decorative low-poly boulder rocks on some stepping stones
+            if (i % 2 == 1)
+            {
+                SpawnLowPolyOrPrimitive(boulderPrefab, PrimitiveType.Cube, "PathRock", steppingStonePositions[i] + new Vector3(1.2f, 0.2f, -1.2f), new Vector3(0.5f, 0.5f, 0.5f), Quaternion.identity, pathHolder.transform, darkRockMat);
+            }
+
             // Memory crystal floating above it
             GameObject crystal = GameObject.CreatePrimitive(PrimitiveType.Cube);
             crystal.name = $"MemoryCrystal_{i}";
@@ -211,26 +226,11 @@ public class SetupDemoScene : EditorWindow
         treePatch.GetComponent<Renderer>().material = soilMat;
         treePatch.transform.SetParent(island4.transform);
 
-        // Distraction Tree
-        GameObject tree = new GameObject("DistractionTree");
-        tree.transform.position = new Vector3(75f, 0.55f, 0f);
-        tree.transform.SetParent(island4.transform);
+        // Distraction Tree (Using LPW Low-Poly Tree Prefab)
+        GameObject tree = SpawnLowPolyOrPrimitive(treePrefab, PrimitiveType.Cylinder, "DistractionTree", new Vector3(75f, 0.55f, 0f), new Vector3(0.6f, 0.6f, 0.6f), Quaternion.identity, island4.transform, woodMat);
 
-        GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        trunk.name = "Trunk";
-        trunk.transform.position = new Vector3(75f, 1.2f, 0f);
-        trunk.transform.localScale = new Vector3(0.3f, 0.7f, 0.3f);
-        trunk.GetComponent<Renderer>().material = woodMat;
-        trunk.transform.SetParent(tree.transform);
-
-        GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        leaves.name = "Leaves";
-        leaves.transform.position = new Vector3(75f, 2.0f, 0f);
-        leaves.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
-        Material leavesMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        leavesMat.color = new Color(0.1f, 0.6f, 0.15f);
-        leaves.GetComponent<Renderer>().material = leavesMat;
-        leaves.transform.SetParent(tree.transform);
+        // Scatter grass and flowers around the island
+        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(75f, 0.5f, 0f), 5f, 10, island4.transform);
 
 
         // --- ISLAND 5: GEMEINSAMES HEILEN (X: 100) ---
@@ -266,6 +266,9 @@ public class SetupDemoScene : EditorWindow
             pillar.transform.localScale = new Vector3(0.6f, 1.5f, 0.6f);
             pillar.transform.SetParent(island5.transform);
         }
+
+        // Scatter grass and flowers around the ancient ruins
+        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(100f, 0.5f, 0f), 6f, 15, island5.transform);
 
 
         // --- CREATE PLAYER & MANAGERS ---
@@ -322,6 +325,61 @@ public class SetupDemoScene : EditorWindow
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         
         Debug.Log("Architect of Mind: 5 Floating Islands setup complete! Press Play to test.");
+    }
+
+    private static GameObject SpawnLowPolyOrPrimitive(GameObject prefab, PrimitiveType primitiveType, string name, Vector3 pos, Vector3 scale, Quaternion rot, Transform parent, Material fallbackMat = null)
+    {
+        GameObject go;
+        if (prefab != null)
+        {
+            go = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            go.name = name;
+            go.transform.position = pos;
+            go.transform.localScale = scale;
+            go.transform.rotation = rot;
+        }
+        else
+        {
+            go = GameObject.CreatePrimitive(primitiveType);
+            go.name = name;
+            go.transform.position = pos;
+            go.transform.localScale = scale;
+            go.transform.rotation = rot;
+            if (fallbackMat != null) go.GetComponent<Renderer>().material = fallbackMat;
+        }
+        if (parent != null) go.transform.SetParent(parent);
+        return go;
+    }
+
+    private static void ScatterGrassAndFlowers(GameObject grassPrefab, GameObject flowerPrefab, Vector3 center, float radius, int count, Transform parent)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float dist = Random.Range(0.5f, radius);
+            Vector3 pos = center + new Vector3(Mathf.Cos(angle) * dist, 0.5f, Mathf.Sin(angle) * dist);
+            
+            // Raycast down to find ground level
+            if (Physics.Raycast(pos + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f))
+            {
+                pos.y = hit.point.y;
+            }
+
+            if (Random.value > 0.4f)
+            {
+                if (grassPrefab != null)
+                {
+                    SpawnLowPolyOrPrimitive(grassPrefab, PrimitiveType.Cube, "GrassPatch", pos, Vector3.one * Random.Range(0.8f, 1.4f), Quaternion.Euler(0, Random.Range(0, 360), 0), parent);
+                }
+            }
+            else
+            {
+                if (flowerPrefab != null)
+                {
+                    SpawnLowPolyOrPrimitive(flowerPrefab, PrimitiveType.Cube, "FlowerPatch", pos, Vector3.one * Random.Range(0.8f, 1.2f), Quaternion.Euler(0, Random.Range(0, 360), 0), parent);
+                }
+            }
+        }
     }
 
     private static void RegisterTag(string tag)
