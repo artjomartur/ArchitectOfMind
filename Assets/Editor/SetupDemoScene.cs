@@ -19,6 +19,29 @@ public class SetupDemoScene : EditorWindow
         // 2. Clean up existing objects that we might duplicate
         CleanExistingDemoObjects();
 
+        // Setup Directional Light (warm golden hour light with soft shadows)
+        Light mainLight = null;
+        Light[] lights = GameObject.FindObjectsByType<Light>(FindObjectsInactive.Exclude);
+        foreach (var l in lights)
+        {
+            if (l.type == LightType.Directional)
+            {
+                mainLight = l;
+                break;
+            }
+        }
+        if (mainLight == null)
+        {
+            GameObject lightGO = new GameObject("DirectionalLight", typeof(Light));
+            mainLight = lightGO.GetComponent<Light>();
+            mainLight.type = LightType.Directional;
+            Undo.RegisterCreatedObjectUndo(lightGO, "Create Directional Light");
+        }
+        mainLight.transform.rotation = Quaternion.Euler(35f, -45f, 0f);
+        mainLight.color = new Color(1.0f, 0.94f, 0.84f); // soft golden sunset/sunrise glow
+        mainLight.intensity = 1.35f;
+        mainLight.shadows = LightShadows.Soft;
+
         // 3. Create a parent holder for all islands to keep hierarchy clean
         GameObject islandsHolder = new GameObject("FloatingIslandsHolder");
         Undo.RegisterCreatedObjectUndo(islandsHolder, "Create Islands Holder");
@@ -75,8 +98,8 @@ public class SetupDemoScene : EditorWindow
         sprout.GetComponent<Renderer>().material = sproutMat;
         sprout.transform.SetParent(island1.transform);
 
-        // Scatter grass and flowers around the island
-        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(0f, 0.5f, 0f), 5f, 10, island1.transform);
+        // Populate Island 1 with trees, rocks, grass, and flowers
+        PopulateIslandNature(treePrefab, boulderPrefab, grassPrefab, flowerPrefab, new Vector3(0f, 0f, 0f), 5f, 3, 2, 20, island1.transform, woodMat, darkRockMat);
 
 
         // --- ISLAND 2: INNERER DIALOG (X: 25) ---
@@ -105,9 +128,9 @@ public class SetupDemoScene : EditorWindow
         bridge.GetComponent<Renderer>().material = woodMat;
         bridge.transform.SetParent(dialogueHolder.transform);
 
-        // Scatter grass and flowers on both Dialogue island platforms
-        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(21f, 0.5f, 0f), 2.5f, 6, dialogueHolder.transform);
-        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(29f, 0.1f, 0f), 2.5f, 4, dialogueHolder.transform);
+        // Populate Island 2 platforms with trees, rocks, grass, and flowers
+        PopulateIslandNature(treePrefab, boulderPrefab, grassPrefab, flowerPrefab, new Vector3(21f, 0f, 0f), 2.5f, 1, 1, 12, dialogueHolder.transform, woodMat, darkRockMat);
+        PopulateIslandNature(null, boulderPrefab, grassPrefab, flowerPrefab, new Vector3(29f, -0.5f, 0f), 2.5f, 0, 3, 10, dialogueHolder.transform, null, darkRockMat);
 
         // --- DIALOGUE MONOLITH (Gedanken Umstrukturieren) ---
         // Using low-poly boulder prefab as base
@@ -229,8 +252,8 @@ public class SetupDemoScene : EditorWindow
         // Distraction Tree (Using LPW Low-Poly Tree Prefab)
         GameObject tree = SpawnLowPolyOrPrimitive(treePrefab, PrimitiveType.Cylinder, "DistractionTree", new Vector3(75f, 0.55f, 0f), new Vector3(0.6f, 0.6f, 0.6f), Quaternion.identity, island4.transform, woodMat);
 
-        // Scatter grass and flowers around the island
-        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(75f, 0.5f, 0f), 5f, 10, island4.transform);
+        // Populate Island 4 with trees, rocks, grass, and flowers around the central distraction tree
+        PopulateIslandNature(treePrefab, boulderPrefab, grassPrefab, flowerPrefab, new Vector3(75f, 0f, 0f), 5f, 4, 3, 25, island4.transform, woodMat, darkRockMat);
 
 
         // --- ISLAND 5: GEMEINSAMES HEILEN (X: 100) ---
@@ -267,8 +290,8 @@ public class SetupDemoScene : EditorWindow
             pillar.transform.SetParent(island5.transform);
         }
 
-        // Scatter grass and flowers around the ancient ruins
-        ScatterGrassAndFlowers(grassPrefab, flowerPrefab, new Vector3(100f, 0.5f, 0f), 6f, 15, island5.transform);
+        // Populate Island 5 with trees, rocks, grass, and flowers around the ancient ruins
+        PopulateIslandNature(treePrefab, boulderPrefab, grassPrefab, flowerPrefab, new Vector3(100f, 0f, 0f), 6f, 3, 4, 30, island5.transform, woodMat, templeMat);
 
         // --- PHYSICAL STORY BRIDGES & GATES ---
         GameObject storyHolder = new GameObject("StoryProgressObjects");
@@ -512,6 +535,47 @@ public class SetupDemoScene : EditorWindow
             }
             r.sharedMaterials = mats;
         }
+    }
+
+    private static void PopulateIslandNature(GameObject treePF, GameObject rockPF, GameObject grassPF, GameObject flowerPF, Vector3 center, float radius, int treeCount, int rockCount, int floraCount, Transform parent, Material woodMat = null, Material rockMat = null)
+    {
+        // 1. Spawn decorative trees
+        for (int i = 0; i < treeCount; i++)
+        {
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float dist = Random.Range(3.5f, radius - 1f); // keep away from center
+            Vector3 pos = center + new Vector3(Mathf.Cos(angle) * dist, 0.5f, Mathf.Sin(angle) * dist);
+            
+            // Adjust height based on terrain
+            if (Physics.Raycast(pos + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f))
+            {
+                pos.y = hit.point.y;
+            }
+
+            float scale = Random.Range(0.4f, 0.8f);
+            Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            SpawnLowPolyOrPrimitive(treePF, PrimitiveType.Cylinder, $"DecoTree_{i}", pos, new Vector3(scale, scale, scale), rot, parent, woodMat);
+        }
+
+        // 2. Spawn decorative rocks
+        for (int i = 0; i < rockCount; i++)
+        {
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float dist = Random.Range(2.5f, radius - 0.5f);
+            Vector3 pos = center + new Vector3(Mathf.Cos(angle) * dist, 0.5f, Mathf.Sin(angle) * dist);
+            
+            if (Physics.Raycast(pos + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f))
+            {
+                pos.y = hit.point.y;
+            }
+
+            float scale = Random.Range(0.3f, 0.7f);
+            Quaternion rot = Quaternion.Euler(Random.Range(-10f, 10f), Random.Range(0f, 360f), Random.Range(-10f, 10f));
+            SpawnLowPolyOrPrimitive(rockPF, PrimitiveType.Cube, $"DecoRock_{i}", pos, new Vector3(scale, scale, scale), rot, parent, rockMat);
+        }
+
+        // 3. Spawn grass and flowers
+        ScatterGrassAndFlowers(grassPF, flowerPF, center, radius, floraCount, parent);
     }
 
     private static void ScatterGrassAndFlowers(GameObject grassPrefab, GameObject flowerPrefab, Vector3 center, float radius, int count, Transform parent)
