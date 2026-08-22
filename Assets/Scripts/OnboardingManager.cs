@@ -149,9 +149,8 @@ public class OnboardingManager : MonoBehaviour
             int optionIndex = i;
             float yPos = startY + i * (buttonHeight + spacing);
 
-            // Shift buttons right (X: 180) to keep card side-by-side with mascot
             GameObject button = CreateButton(card.transform, $"Option_{i}", new Vector2(550, buttonHeight), new Vector2(180f, yPos - 120f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.white, buttonSprite);
-            CreateText(button.transform, currentOptions[i], font, 24, Color.white);
+            CreateText(button.transform, currentOptions[i], font, 24, new Color(0.08f, 0.12f, 0.2f));
             
             button.GetComponent<Button>().onClick.AddListener(() =>
             {

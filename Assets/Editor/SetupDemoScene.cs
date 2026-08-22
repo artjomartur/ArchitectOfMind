@@ -272,24 +272,15 @@ public class SetupDemoScene : EditorWindow
 
 
         // --- CREATE PLAYER & MANAGERS ---
-        // Configure textures as sprites programmatically to prevent UI nullref errors
-        ConfigureAsSprite("Assets/Basic/Textures/panel_horizontal.png");
-        ConfigureAsSprite("Assets/Basic/Textures/panel_vertical.png");
-        ConfigureAsSprite("Assets/Basic/Textures/back_grey.png");
-        ConfigureAsSprite("Assets/Basic/Textures/next_grey.png");
-        ConfigureAsSprite("Assets/Basic/Textures/PlayButton_grey.png");
-        ConfigureAsSprite("Assets/Basic/Textures/fox_meditating.jpg");
-        ConfigureAsSprite("Assets/Basic/Textures/fox_happy.jpg");
-        ConfigureAsSprite("Assets/Basic/Textures/fox_explaining.jpg");
-
-        Sprite pH = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/panel_horizontal.png");
-        Sprite pV = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/panel_vertical.png");
-        Sprite backArr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/back_grey.png");
-        Sprite nextArr = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/next_grey.png");
-        Sprite btnG = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/PlayButton_grey.png");
-        Sprite foxMed = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/fox_meditating.jpg");
-        Sprite foxHap = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/fox_happy.jpg");
-        Sprite foxExp = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Basic/Textures/fox_explaining.jpg");
+        // Configure and load textures as sprites (uses dynamic Texture2D fallback if AssetDatabase isn't updated)
+        Sprite pH = LoadSprite("Assets/Basic/Textures/panel_horizontal.png");
+        Sprite pV = LoadSprite("Assets/Basic/Textures/panel_vertical.png");
+        Sprite backArr = LoadSprite("Assets/Basic/Textures/back_grey.png");
+        Sprite nextArr = LoadSprite("Assets/Basic/Textures/next_grey.png");
+        Sprite btnG = LoadSprite("Assets/Basic/Textures/panel_horizontal.png"); // Clean panel instead of PlayButton_grey to prevent overlapping baked text
+        Sprite foxMed = LoadSprite("Assets/Basic/Textures/fox_meditating.jpg");
+        Sprite foxHap = LoadSprite("Assets/Basic/Textures/fox_happy.jpg");
+        Sprite foxExp = LoadSprite("Assets/Basic/Textures/fox_explaining.jpg");
 
         GameObject foxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Fox/Prefabs/Fox.prefab");
 
@@ -498,6 +489,22 @@ public class SetupDemoScene : EditorWindow
             importer.textureType = TextureImporterType.Sprite;
             importer.SaveAndReimport();
         }
+    }
+
+    private static Sprite LoadSprite(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        ConfigureAsSprite(path);
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (sprite == null)
+        {
+            Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (tex != null)
+            {
+                sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            }
+        }
+        return sprite;
     }
 
     private static void RegisterTag(string tag)
