@@ -19,6 +19,9 @@ public class MindfulnessGameManager : MonoBehaviour
     [Header("Module 2: Dialog")]
     [Range(-1f, 1f)]
     public float thoughtBalance = 0.0f; // -1 = Negative thoughts, +1 = Positive thoughts
+    public bool isDialogueRestructured = false;
+    public int blockCount = 5;
+    public int maxBlocks = 20;
     public List<string> positiveThoughts = new List<string> { "Ich schaffe das.", "Ich bin stark.", "Fehler sind Helfer.", "Ich bin wertvoll.", "Morgen ist ein neuer Tag." };
     public List<string> negativeThoughts = new List<string> { "Du wirst scheitern.", "Das klappt nie.", "Du bist nicht genug.", "Niemand hört dir zu.", "Warum überhaupt versuchen?" };
     private float bubbleSpawnTimer = 0f;

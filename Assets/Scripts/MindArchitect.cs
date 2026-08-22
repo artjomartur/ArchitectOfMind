@@ -309,6 +309,16 @@ public class MindArchitect : MonoBehaviour
                     }
                 }
 
+                // Dialogue Monolith (Katastrophisieren) -> Open Restructuring Puzzle
+                else if (hit.collider.CompareTag("DialogueMonolith") || hit.collider.name == "DialogueMonolith")
+                {
+                    if (RestructurePuzzleManager.Instance == null && MindfulnessGameManager.Instance != null && !MindfulnessGameManager.Instance.isDialogueRestructured)
+                    {
+                        GameObject go = new GameObject("RestructurePuzzleManager");
+                        go.AddComponent<RestructurePuzzleManager>();
+                    }
+                }
+
                 // 3. Resource Path (Collect crystals)
                 else if (hit.collider.CompareTag("MemoryCrystal") || hit.collider.name.StartsWith("MemoryCrystal"))
                 {

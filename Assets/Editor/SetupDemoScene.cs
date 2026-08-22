@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine.UI;
 
 public class SetupDemoScene : EditorWindow
 {
@@ -13,6 +14,7 @@ public class SetupDemoScene : EditorWindow
         RegisterTag("MemoryCrystal");
         RegisterTag("TreePatch");
         RegisterTag("TempleRuin");
+        RegisterTag("DialogueMonolith");
 
         // 2. Clean up existing objects that we might duplicate
         CleanExistingDemoObjects();
@@ -93,6 +95,68 @@ public class SetupDemoScene : EditorWindow
         bridge.transform.localScale = new Vector3(4f, 0.1f, 1.5f);
         bridge.GetComponent<Renderer>().material = woodMat;
         bridge.transform.SetParent(dialogueHolder.transform);
+
+        // --- DIALOGUE MONOLITH (Gedanken Umstrukturieren) ---
+        GameObject monolith = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        monolith.name = "DialogueMonolith";
+        monolith.tag = "DialogueMonolith";
+        monolith.transform.position = new Vector3(25f, 1.8f, 3.5f);
+        monolith.transform.localScale = new Vector3(1.5f, 3.5f, 1.5f);
+        monolith.GetComponent<Renderer>().material = darkRockMat;
+        monolith.transform.SetParent(dialogueHolder.transform);
+
+        // Add thorny vine components
+        Material thornMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        thornMat.color = new Color(0.45f, 0.1f, 0.1f); // dark reddish brown
+
+        GameObject thorn1 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        thorn1.name = "ThornVine_1";
+        thorn1.transform.position = new Vector3(24.6f, 1.8f, 2.7f);
+        thorn1.transform.localScale = new Vector3(0.12f, 1.9f, 0.12f);
+        thorn1.transform.rotation = Quaternion.Euler(15f, 20f, 10f);
+        thorn1.GetComponent<Renderer>().material = thornMat;
+        thorn1.transform.SetParent(monolith.transform);
+
+        GameObject thorn2 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        thorn2.name = "ThornVine_2";
+        thorn2.transform.position = new Vector3(25.4f, 1.8f, 2.7f);
+        thorn2.transform.localScale = new Vector3(0.12f, 1.9f, 0.12f);
+        thorn2.transform.rotation = Quaternion.Euler(-15f, -20f, -10f);
+        thorn2.GetComponent<Renderer>().material = thornMat;
+        thorn2.transform.SetParent(monolith.transform);
+
+        // World Space Canvas for Negative Thought text on the front of the monolith
+        GameObject wsc = new GameObject("WorldSpaceCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        wsc.transform.SetParent(monolith.transform);
+        wsc.transform.localPosition = new Vector3(0f, 0.1f, -0.51f); // slightly in front of the monolith face
+        wsc.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // face the player
+        wsc.transform.localScale = new Vector3(0.007f, 0.007f, 0.007f); // scale down to fit
+
+        Canvas canvasComp = wsc.GetComponent<Canvas>();
+        canvasComp.renderMode = RenderMode.WorldSpace;
+        
+        RectTransform wscRT = wsc.GetComponent<RectTransform>();
+        wscRT.sizeDelta = new Vector2(200, 100);
+
+        Font uifont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (uifont == null) uifont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+        GameObject wscTextGO = new GameObject("ThoughtText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        wscTextGO.transform.SetParent(wsc.transform, false);
+        
+        RectTransform textRT = wscTextGO.GetComponent<RectTransform>();
+        textRT.anchorMin = Vector2.zero;
+        textRT.anchorMax = Vector2.one;
+        textRT.sizeDelta = Vector2.zero;
+
+        Text wscText = wscTextGO.GetComponent<Text>();
+        wscText.font = uifont;
+        wscText.fontSize = 11;
+        wscText.text = "KATASTROPHISIEREN:\nWenn ich die Klausur nicht schaffe, bin ich wertlos!";
+        wscText.alignment = TextAnchor.MiddleCenter;
+        wscText.color = Color.red;
+        wscText.raycastTarget = false;
+
 
 
         // --- ISLAND 3: RESSOURCEN-PFAD (X: 50) ---
@@ -310,6 +374,9 @@ public class SetupDemoScene : EditorWindow
 
         GameObject oldOnboardingCanvas = GameObject.Find("OnboardingCanvas");
         if (oldOnboardingCanvas != null) Undo.DestroyObjectImmediate(oldOnboardingCanvas);
+
+        GameObject oldPuzzleCanvas = GameObject.Find("RestructurePuzzleCanvas");
+        if (oldPuzzleCanvas != null) Undo.DestroyObjectImmediate(oldPuzzleCanvas);
         
         // Clean leftover items
         GameObject[] leftoverCrystals = GameObject.FindGameObjectsWithTag("MemoryCrystal");

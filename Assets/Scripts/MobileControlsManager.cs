@@ -20,6 +20,7 @@ public class MobileControlsManager : MonoBehaviour
     private Text moduleTitleText;
     private Text statsText;
     private Text modeToggleText;
+    private Text hudBlockCountText;
 
     private string[] moduleNames = new string[] {
         "ACHTSAMES WACHSEN\nSamen durch tägliche Dankbarkeit pflegen.",
@@ -113,6 +114,12 @@ public class MobileControlsManager : MonoBehaviour
     {
         var mgm = MindfulnessGameManager.Instance;
         if (mgm == null) return;
+
+        // Update block counter text
+        if (hudBlockCountText != null)
+        {
+            hudBlockCountText.text = $"{mgm.blockCount}/{mgm.maxBlocks}";
+        }
 
         // Update Title text
         if (moduleTitleText != null)
@@ -304,6 +311,23 @@ public class MobileControlsManager : MonoBehaviour
                 bool active = MindfulnessGameManager.Instance.isSlideNavigationActive;
                 MindfulnessGameManager.Instance.SetSlideNavigation(!active);
             }
+        });
+
+        // 6. Block Counter HUD Panel (matching concept sketch)
+        GameObject blockHUD = CreateImage(parent, "BlockHUDPanel", new Vector2(180, 70), new Vector2(-110, -60), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Color(0.18f, 0.24f, 0.28f, 0.9f));
+        GameObject blockTextGO = CreateText(blockHUD.transform, "📦 5/20", font, 24, Color.white);
+        hudBlockCountText = blockTextGO.GetComponent<Text>();
+
+        // 7. Energy / Leaf Badge (matching concept sketch)
+        GameObject energyHUD = CreateImage(parent, "EnergyHUDPanel", new Vector2(180, 70), new Vector2(110, -60), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Color(0.12f, 0.45f, 0.35f, 0.9f));
+        CreateText(energyHUD.transform, "⚡ 🍃", font, 28, Color.white);
+
+        // 8. Settings Gear Button (matching concept sketch)
+        GameObject settingsBtn = CreateButton(parent, "SettingsGearButton", new Vector2(80, 80), new Vector2(-80, -60), new Vector2(1f, 1f), new Vector2(1f, 1f), new Color(0.18f, 0.24f, 0.28f, 0.9f));
+        CreateText(settingsBtn.transform, "⚙", font, 36, Color.white);
+        settingsBtn.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            Debug.Log("Settings opened!");
         });
     }
 
