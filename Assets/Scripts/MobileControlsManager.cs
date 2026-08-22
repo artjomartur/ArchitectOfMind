@@ -30,6 +30,7 @@ public class MobileControlsManager : MonoBehaviour
 
     private Text mascotTipText;
     private Image mascotHUDImage;
+    private float storyMessageOverrideTimer = 0f;
 
     private string[] moduleNames = new string[] {
         "ACHTSAMES WACHSEN\nSamen durch tägliche Dankbarkeit pflegen.",
@@ -59,6 +60,11 @@ public class MobileControlsManager : MonoBehaviour
     void Update()
     {
         if (MindfulnessGameManager.Instance == null) return;
+
+        if (storyMessageOverrideTimer > 0f)
+        {
+            storyMessageOverrideTimer -= Time.deltaTime;
+        }
 
         // Slide look input handler
         UpdateLookInput();
@@ -409,6 +415,15 @@ public class MobileControlsManager : MonoBehaviour
         mascotTipText.color = Color.white;
         mascotTipText.text = "Atme tief ein. Wenn du dankbar bist, gieße deinen Spross!";
         mascotTipText.raycastTarget = false;
+    }
+
+    public void ShowMascotMessage(string message)
+    {
+        if (mascotTipText != null)
+        {
+            mascotTipText.text = message;
+            storyMessageOverrideTimer = 6.0f; // Show narrative alert for 6 seconds
+        }
     }
 
     // --- HELPER CREATION METHODS ---

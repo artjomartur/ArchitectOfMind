@@ -49,3 +49,4 @@ public class FoxAnimationController : MonoBehaviour
         currentAnimationState = newState;
     }
 }
+
